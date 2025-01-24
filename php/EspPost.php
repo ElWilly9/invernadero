@@ -7,7 +7,7 @@ if ($con) {
     
     // Mostrar todos los datos recibidos
     echo " Datos recibidos: ";
-    print_r($_POST);
+    print_r($_GET['temp']);
 
     if (isset($_POST['humedad'])) {
         $humedad = $_POST['humedad'];
