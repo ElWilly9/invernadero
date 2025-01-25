@@ -23,7 +23,7 @@
         <form method="POST" action="php/login_user.php">
             <div class="username">
                 <input type="text" required name="user">
-                <label>Nombre de usuarios</label>
+                <label>Nombre de usuario</label>
             </div>
             <div class="username">
                 <input type="password" required name="contrasena">
