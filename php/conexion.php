@@ -1,8 +1,8 @@
 <?php
  
-        $user = "if0_38138523";
-        $pass = "invernaderoweb";
-        $server = "sql204.infinityfree.com";
-        $db ="if0_38138523_db_invernadero";
+        $user = "root";
+        $pass = "";
+        $server = "localhost";
+        $db ="invernadero";
         $con = mysqli_connect($server, $user, $pass, $db);
 ?>
