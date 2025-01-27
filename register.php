@@ -13,7 +13,7 @@
         <form action="php/conexion_register.php" method="POST">
             <div class="username">
                 <input type="text" required name="user">
-                <label>Nombre de usuario alksjdlaksdj</label>
+                <label>Nombre de usuario</label>
             </div>
             <div class="username">
                 <input type="text" required name="nombre_user">
