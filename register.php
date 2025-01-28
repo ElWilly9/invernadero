@@ -29,7 +29,7 @@
             </div>
             <input type="submit" value="Registrarse">
             <div class="registro">
-                Ya tengo una <a href="../index.php">cuenta</a>    
+                Ya tengo una <a href="index.php">cuenta</a>    
             </div>
         </form>
     </div>
