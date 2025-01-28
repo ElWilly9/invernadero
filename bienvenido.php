@@ -114,15 +114,40 @@
 <body>
     <a href="php/cerrar_sesion.php" class="logout-button">Cerrar Sesión</a>
     <div class="header">
-        <h1>Bienvenido al sistema de monitoreo del invernadero Unal</h1>
+        <h1>Bienvenido AgroVision, el sistema de monitoreo del invernadero Unal</h1>
     </div>
     <div class="panel-central">
-        <div class="box">Temperatura y Humedad</div>
-        <div class="box">Velocidad del viento</div>
-        <div class="box">Opción 3</div>
-        <div class="box">Opción 4</div>
+        <a href="temperatura_humedad.php" class="box">Temperatura y Humedad</a>
+        <a href="velocidad_viento.php" class="box">Velocidad del viento</a>
+        <a href="dash/index.html" class="box">Opción 3</a>
+        <a href="opcion4.php" class="box">Opción 4</a>
     </div>
     <div class="footer">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <canvas id="myChart"></canvas>
+    <script>
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
+            datasets: [{
+                label: 'Temperatura',
+                data: [12, 19, 3, 5, 2, 3],
+                backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                borderColor: 'rgba(0, 123, 255, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+        });
+        </script>
         <img src="https://unal.edu.co/fileadmin/templates/images/logo_unal_black.png" alt="Logo UNAL">
     </div>
 </body>
