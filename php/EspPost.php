@@ -4,10 +4,6 @@ include 'conexion.php';
 
 if ($con) {
     echo "Conexion con base de datos exitosa! ";
-    
-    // Mostrar todos los datos recibidos
-    echo " Datos recibidos: ";
-    print_r($_GET['temp']);
 
     if (isset($_POST['humedad'])) {
         $humedad = $_POST['humedad'];
