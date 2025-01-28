@@ -29,9 +29,6 @@
                 <input type="password" required name="contrasena">
                 <label>Contraseña</label>
             </div>
-            <div class="recordar">
-                ¿Olvidaste tu contraseña?
-            </div>
             <input type="submit" value="Iniciar Sesion">
             <div class="registro">
                 Quiero hacer el <a href="register.php">registro</a>    
