@@ -35,12 +35,6 @@ while ($resultado = mysqli_fetch_array($consulta)) {
     ];
 }
 
-// Invertir los arrays para mostrar los datos en orden cronológico
-$temp = array_reverse($temp);
-$hum = array_reverse($hum);
-$fechas = array_reverse($fechas);
-$datos_amchart = array_reverse($datos_amchart);
-
 // Convertir a JSON para usar en JavaScript
 $fecha_json = json_encode($fechas);
 $temp_json = json_encode($temp);
@@ -58,6 +52,7 @@ $hum_actual = !empty($hum) ? end($hum) : 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitoreo de Temperatura y Humedad</title>
+	<link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
@@ -142,9 +137,17 @@ $hum_actual = !empty($hum) ? end($hum) : 0;
 
         <!-- Gráfico Principal -->
         <div class="metric-card p-6 mb-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Historial de Temperatura</h2>
-            <div id="chartdiv" class="h-96"></div>
-        </div>
+    		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        		<div>
+            		<h2 class="text-xl font-semibold text-gray-800 mb-4">Historial de Temperatura</h2>
+            		<canvas id="historial"></canvas>
+        		</div>
+        		<div>
+            		<h2 class="text-xl font-semibold text-gray-800 mb-4">Historial de Humedad</h2>
+            		<canvas id="historial_hum"></canvas>
+        		</div>
+    		</div>
+		</div>
 
         <!-- Gráficos Secundarios -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -209,7 +212,7 @@ $hum_actual = !empty($hum) ? end($hum) : 0;
     });
 
     // Gráfico de Temperatura con Chart.js
-    const tempCtx = document.getElementById('tempChart').getContext('2d');
+    const tempCtx = document.getElementById('historial').getContext('2d');
 	new Chart(tempCtx, {
     type: 'line',
     data: {
@@ -222,11 +225,10 @@ $hum_actual = !empty($hum) ? end($hum) : 0;
             tension: 0.4
         	}]
     		},
-    // ... resto de las opciones
 	});
 
 // Gráfico de Humedad
-	const humCtx = document.getElementById('humChart').getContext('2d');
+	const humCtx = document.getElementById('historial_hum').getContext('2d');
 	new Chart(humCtx, {
     	type: 'line',
     	data: {
