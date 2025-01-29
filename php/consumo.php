@@ -40,7 +40,6 @@ $hourly_data = [
     <title>Monitoreo de Consumo de Agua</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
     <link rel="stylesheet" href="../assets/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -156,7 +155,9 @@ $hourly_data = [
             </div>
             <div class="metric-card">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Consumo por Zona</h3>
-                <canvas id="zoneChart"></canvas>
+                <div class="relative" style="height: 300px; width: 300px; margin: 0 auto;">
+                    <canvas id="zoneChart"></canvas>
+                </div>
             </div>
         </div>
 

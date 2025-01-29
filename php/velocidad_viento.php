@@ -1,24 +1,33 @@
 <?php
 session_start();
+
 include_once 'conexion.php';
 
-// Datos emulados
-$speed = [12.5, 15.3, 10.8, 14.2, 13.7, 11.9, 16.4, 14.8, 12.1, 13.5, 15.0, 14.3];
+if(!isset($_SESSION['usuario'])){
+    echo '
+        <script>
+            alert("Por favor debes de iniciar sesion primero");
+            window.location = "../index.php";
+        </script>
+    ';
+    session_destroy();
+    die();
+}
+
+// Emulación de datos
+$speed = [12.5, 15.3, 10.8, 14.2, 13.7, 11.9, 16.4, 14.8, 12.1, 13.5, 15.0, 14.3, 12.7, 13.9, 15.6, 14.1, 13.2, 12.8, 14.5, 15.1, 13.4, 12.6, 14.0, 15.2];
+$direction = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+
+// Convertir los arrays a formato JSON para usarlos en JavaScript
 $speed_json = json_encode($speed);
+$direction_json = json_encode($direction);
 
-// Datos actuales emulados
-$current_data = [
-    'speed' => 15.3,
-    'direction' => 45,
-    'gust' => 22.1
-];
-
-// Datos de las últimas horas
-$hourly_data = [
-    ['hour' => '09:00', 'speed' => 12.5, 'direction' => 'NE', 'gust' => 18.2],
-    ['hour' => '10:00', 'speed' => 15.3, 'direction' => 'N', 'gust' => 20.1],
-    ['hour' => '11:00', 'speed' => 10.8, 'direction' => 'NW', 'gust' => 16.4],
-    ['hour' => '12:00', 'speed' => 14.2, 'direction' => 'N', 'gust' => 19.8],
+// Simulación de datos para los canales
+$channels = [
+    ['id' => 1, 'speed' => 12.5, 'direction' => 'N', 'last_update' => '9m ago'],
+    ['id' => 2, 'speed' => 15.3, 'direction' => 'NE', 'last_update' => '9m ago'],
+    ['id' => 3, 'speed' => 10.8, 'direction' => 'E', 'last_update' => '9m ago'],
+    ['id' => 4, 'speed' => 14.2, 'direction' => 'SE', 'last_update' => '9m ago'],
 ];
 ?>
 
@@ -31,143 +40,233 @@ $hourly_data = [
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .wind-direction {
-            width: 200px;
-            height: 200px;
-            border: 3px solid #e5e7eb;
-            border-radius: 50%;
-            position: relative;
-            margin: 20px auto;
+        body {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
         }
-        .arrow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 80%;
-            height: 4px;
-            background: #3b82f6;
-            transform: translate(-50%, -50%) rotate(<?php echo $current_data['direction']; ?>deg);
-            transform-origin: center;
+        .header {
+            text-align: center;
+            padding: 20px 0;
         }
-        .arrow::before {
-            content: '';
-            position: absolute;
-            right: -10px;
-            top: -8px;
-            border-left: 20px solid #3b82f6;
-            border-top: 10px solid transparent;
-            border-bottom: 10px solid transparent;
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .channel-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .channel-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+        h1, h2 {
+            font-family: 'Arial', sans-serif;
         }
     </style>
 </head>
 
-<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen p-6">
-    <div class="max-w-7xl mx-auto">
-        <!-- Encabezado -->
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">Monitoreo de Velocidad del Viento</h1>
-            <a href="../bienvenido.php" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-                ← Volver al menú
-            </a>
-        </div>
-
-        <!-- Tarjetas principales -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <!-- Velocidad actual -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">Velocidad Actual</h3>
-                <p class="text-4xl font-bold text-blue-600"><?php echo $current_data['speed']; ?> km/h</p>
-                <p class="text-sm text-gray-500 mt-2">Actualizado hace 5 min</p>
-            </div>
-
-            <!-- Dirección del viento -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">Dirección del Viento</h3>
-                <div class="wind-direction">
-                    <div class="arrow"></div>
+<body>
+    <nav class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <a href="../bienvenido.php" class="text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-arrow-left mr-2"></i>Volver al menú principal
+                    </a>
                 </div>
-                <p class="text-center text-gray-600">45° NE</p>
-            </div>
-
-            <!-- Ráfaga máxima -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">Ráfaga Máxima</h3>
-                <p class="text-4xl font-bold text-red-500"><?php echo $current_data['gust']; ?> km/h</p>
-                <p class="text-sm text-gray-500 mt-2">En la última hora</p>
+                <div class="flex items-center">
+                    <a href="php/cerrar_sesion.php" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+                    </a>
+                </div>
             </div>
         </div>
+    </nav>
 
-        <!-- Gráficos y tabla -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Gráfico -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4">Velocidad del Viento - Últimas 12 horas</h3>
-                <canvas id="windChart" height="300"></canvas>
-            </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Monitoreo de la velocidad y dirección del viento</h1>
+    </div>
 
-            <!-- Tabla de datos -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4">Registro de Mediciones</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hora</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Velocidad</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dirección</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ráfaga</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            <?php foreach ($hourly_data as $data): ?>
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4"><?php echo $data['hour']; ?></td>
-                                <td class="px-6 py-4"><?php echo $data['speed']; ?> km/h</td>
-                                <td class="px-6 py-4"><?php echo $data['direction']; ?></td>
-                                <td class="px-6 py-4"><?php echo $data['gust']; ?> km/h</td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+    <div class="dashboard-container">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Canales de velocidad del viento -->
+            <?php foreach ($channels as $channel): ?>
+            <div class="channel-card p-4">
+                <div class="flex items-center">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%2300BFFF'%3E%3Cpath d='M12 3C11.0572 3 10.2 3.85719 10.2 4.8V15.4C9.45 15.9 9 16.7 9 17.6C9 19.2 10.3431 20.5 12 20.5C13.6569 20.5 15 19.2 15 17.6C15 16.7 14.55 15.9 13.8 15.4V4.8C13.8 3.85719 12.9428 3 12 3Z'/%3E%3C/svg%3E" 
+                     alt="Velocidad del Viento" class="w-6 h-6 mr-2">
+                    <div>
+                        <h3 class="font-medium">Canal <?php echo $channel['id']; ?></h3>
+                        <p class="text-sm text-gray-500">Última actualización <?php echo $channel['last_update']; ?></p>
+                    </div>
                 </div>
+                <div class="speed <?php echo $channel['speed'] > 10 ? 'text-red-600' : 'text-blue-600'; ?> text-2xl font-bold">
+                    <?php echo $channel['speed']; ?> km/h
+                </div>
+                <div class="direction text-gray-500">
+                    Dirección: <?php echo $channel['direction']; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Velocidad del Viento</h2>
+                <canvas id="speedChart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Distribución de Velocidad del Viento</h2>
+                <canvas id="speedDistributionChart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Dirección y Velocidad del Viento</h2>
+                <canvas id="windDirectionChart"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="text-xl font-bold mb-4">Tabla de Velocidad del Viento</h2>
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr>
+                            <th class="py-2">Canal</th>
+                            <th class="py-2">Velocidad (km/h)</th>
+                            <th class="py-2">Dirección</th>
+                            <th class="py-2">Última Actualización</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($channels as $channel): ?>
+                        <tr>
+                            <td class="border px-4 py-2"><?php echo $channel['id']; ?></td>
+                            <td class="border px-4 py-2"><?php echo $channel['speed']; ?></td>
+                            <td class="border px-4 py-2"><?php echo $channel['direction']; ?></td>
+                            <td class="border px-4 py-2"><?php echo $channel['last_update']; ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
     <script>
-        // Configuración del gráfico
-        const ctx = document.getElementById('windChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'],
-                datasets: [{
-                    label: 'Velocidad del Viento (km/h)',
+    // Gráfico de velocidad del viento
+    const speedCtx = document.getElementById('speedChart').getContext('2d');
+    new Chart(speedCtx, {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+            datasets: [
+                {
+                    label: 'Velocidad del Viento',
                     data: <?php echo $speed_json; ?>,
-                    borderColor: '#3b82f6',
-                    tension: 0.4,
-                    fill: false
-                }]
+                    borderColor: '#2563EB',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Velocidad (km/h)'
-                        }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Velocidad (km/h)'
                     }
                 }
             }
-        });
+        }
+    });
+
+    // Gráfico de distribución de velocidad del viento
+    const speedDistributionCtx = document.getElementById('speedDistributionChart').getContext('2d');
+    new Chart(speedDistributionCtx, {
+        type: 'bar',
+        data: {
+            labels: ['0-5 km/h', '5-10 km/h', '10-15 km/h', '15-20 km/h', '20-25 km/h'],
+            datasets: [{
+                label: 'Frecuencia',
+                data: [2, 5, 8, 6, 3], // Datos de ejemplo
+                backgroundColor: '#34D399'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Frecuencia'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Rango de Velocidad'
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de dirección y velocidad del viento
+    const windDirectionCtx = document.getElementById('windDirectionChart').getContext('2d');
+    new Chart(windDirectionCtx, {
+        type: 'radar',
+        data: {
+            labels: <?php echo $direction_json; ?>,
+            datasets: [{
+                label: 'Velocidad del Viento',
+                data: <?php echo $speed_json; ?>,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                r: {
+                    angleLines: {
+                        display: true
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 25,
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        }
+    });
     </script>
 </body>
 </html>

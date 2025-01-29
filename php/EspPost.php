@@ -61,7 +61,7 @@ if ($con) {
         date_default_timezone_set('America/Bogota');
         $fecha_actual = date("Y-m-d H:i:s");
 
-        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente, humedad_ambiente, fecha_registro) VALUES ('$hum', '$temp', '$fecha_actual')";
+        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente, humedad_ambiente, fecha_registro) VALUES ('$temp', '$hum', '$fecha_actual')";
 
         $resultado = mysqli_query($con, $consulta);
 
