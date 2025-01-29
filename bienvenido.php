@@ -18,11 +18,12 @@
 
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<head>      
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
+    <link rel="stylesheet" href="assets/style.css">
     <style>
         body {
             margin: 0;
@@ -38,6 +39,7 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
+            margin-top: 100px;
         }
 
         .header h1 {
@@ -50,7 +52,7 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 20px;
-            padding: 40px;
+            padding: 40px 40px 40px 40px; /* Ajusta el padding-top si es necesario */
             background: #fff;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
             border-radius: 10px;
@@ -98,7 +100,7 @@
         }
 
         .footer {
-            margin-top: 20px;
+            margin-top: 40px;
             text-align: center;
         }
 
@@ -117,38 +119,15 @@
         <h1>Bienvenido AgroVision, el sistema de monitoreo del invernadero Unal</h1>
     </div>
     <div class="panel-central">
-        <a href="temperatura_humedad.php" class="box">Temperatura y Humedad</a>
-        <a href="velocidad_viento.php" class="box">Velocidad del viento</a>
-        <a href="dash/index.html" class="box">Opción 3</a>
-        <a href="opcion4.php" class="box">Opción 4</a>
+        <a href="php/temperatura_humedad.php" class="box">Temperatura y Humedad</a>
+        <a href="php/velocidad_viento.php" class="box">Velocidad del viento</a>
+        <a href="php/consumo.php" class="box">Consumo de agua</a>
+        <a href="opcion4.php" class="box">Energía</a>
     </div>
-    <div class="footer">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <canvas id="myChart"></canvas>
-    <script>
-        const ctx = document.getElementById('myChart').getContext('2d');
-        const myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
-            datasets: [{
-                label: 'Temperatura',
-                data: [12, 19, 3, 5, 2, 3],
-                backgroundColor: 'rgba(0, 123, 255, 0.2)',
-                borderColor: 'rgba(0, 123, 255, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-        });
-        </script>
-        <img src="https://unal.edu.co/fileadmin/templates/images/logo_unal_black.png" alt="Logo UNAL">
+
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <img src="img/logo.png" style="width: 10%; height: auto;" alt="Imagen">
     </div>
+    
 </body>
 </html>

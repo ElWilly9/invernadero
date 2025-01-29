@@ -118,3 +118,10 @@ input[type="submit"]:hover{
 .registro a:hover{
     text-decoration: underline;
 }
+
+.logo{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+}
