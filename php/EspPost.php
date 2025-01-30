@@ -23,7 +23,7 @@ if ($con) {
             echo " Falla en el registro en BD: " . mysqli_error($con);
         }
     } else {
-        echo " No se recibió el dato de humedad. ";
+        echo " No se recibió el dato de humedad del suelo. ";
     }
 
     /*flujo de agua*/
@@ -34,7 +34,7 @@ if ($con) {
         date_default_timezone_set('America/Bogota');
         $fecha_actual = date("Y-m-d H:i:s");
 
-        $consulta = "INSERT INTO flujo_agua(Litros-seg, fecha_registro) VALUES ('$flujo_agua', '$fecha_actual')";
+        $consulta = "INSERT INTO flujo_agua(Litros'-'seg, fecha_registro) VALUES ('$flujo_agua', '$fecha_actual')";
 
         $resultado = mysqli_query($con, $consulta);
 
