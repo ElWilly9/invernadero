@@ -11,6 +11,41 @@ if(!isset($_SESSION['usuario'])){
     session_destroy();
     die();
 }
+include 'conexion.php';
+
+// Consulta para obtener los datos
+$SQL = "SELECT * FROM flujo_agua ORDER BY fecha_registro";
+$consulta = mysqli_query($con, $SQL);
+
+$litros_seg = [];
+$flujo_agua_total = [];
+$fecha_total = [];
+$fechas = [];
+$horas = [];
+
+while ($resultado = mysqli_fetch_array($consulta)) {
+    // Datos para los gráficos de Chart.js
+    $litros_seg[] = floatval($resultado['litros_seg']);
+    $flujo_agua_total[] = floatval($resultado['flujo_agua_total']);
+    $fecha_total = date('Y:m:d H:i:s', strtotime($resultado['fecha_registro']));
+    $fechas[] = date('Y:m:d', strtotime($resultado['fecha_registro']));
+    $horas[] = date('H:i:s', strtotime($resultado['fecha_registro']));
+    
+}
+// Obtener valores actuales (último registro)
+$litros_seg_actual = !empty($litros_seg) ? end($litros_seg) : 0;
+$hum_actual = !empty($hum) ? end($hum) : 0;
+
+// Convertir a JSON para usar en JavaScript
+$fechas = json_encode($fechas);
+$litros_seg = json_encode($litros_seg);
+$fecha_total = json_encode($fecha_total);
+$flujo_agua_total = json_encode($flujo_agua_total);
+$horas = json_encode($horas);
+
+echo '<pre>';
+print_r($fecha_total);
+echo '</pre>';
 
 // Simulación de datos - Reemplazar con datos reales de los sensores
 $current_flow = 2.5; // L/min
@@ -37,13 +72,15 @@ $hourly_data = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoreo de Consumo de Agua</title>
+    <title>AgroVision</title>
     <link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
     <link rel="stylesheet" href="../assets/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://code.highcharts.com/highcharts.js"></script>
 </head>
 <style>
 .header {
@@ -52,6 +89,9 @@ $hourly_data = [
     padding: 1rem;
     margin-bottom: 2rem;
 }
+.consumo-bg {
+            background: linear-gradient(135deg, #dff6fa 20%, #a4e0ea 80%);
+        }
 
 .back-button {
     display: inline-block;
@@ -111,14 +151,29 @@ $hourly_data = [
     50% { clip-path: polygon(0 45%, 100% 45%, 100% 100%, 0% 100%); }
 }
 </style>
-<body class="bg-gradient-to-br from-[#76c442] to-[#a2db4f] min-h-screen">
-    <div class="header">
-        <div class="container mx-auto px-4">
-            <h1 class="text-3xl font-bold">Monitoreo de Consumo de Agua</h1>
-            <div class="mt-4">
-                <a href="../bienvenido.php" class="back-button">← Volver al menú principal</a>
+<body class="consumo-bg"> 
+    <nav class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <a href="../bienvenido.php" class="text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-arrow-left mr-2"></i>Volver al menú principal
+                    </a>
+                </div>
+                <div class="flex items-center">
+                    <a href="cerrar_sesion.php" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+                    </a>
+                </div>
             </div>
         </div>
+    </nav>
+
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Monitoreo de Consumo de agua</h1>
     </div>
 
     <div class="container mx-auto px-4">
@@ -129,7 +184,7 @@ $hourly_data = [
                     <div class="water-wave"></div>
                 </div>
                 <h3 class="text-lg font-semibold text-center text-gray-800">Flujo Actual</h3>
-                <p class="text-3xl font-bold text-center text-blue-600"><?php echo $current_flow; ?> L/min</p>
+                <p class="text-3xl font-bold text-center text-blue-600"><?php echo $litros_seg_actual; ?> L/seg</p>
             </div>
             <div class="metric-card">
                 <h3 class="text-lg font-semibold text-gray-800">Consumo Diario</h3>
@@ -151,8 +206,7 @@ $hourly_data = [
         <!-- Gráficas -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div class="metric-card">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Consumo por Hora</h3>
-                <canvas id="hourlyChart"></canvas>
+                <div id="litros_h"></div>
             </div>
             <div class="metric-card">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Consumo por Zona</h3>
@@ -204,38 +258,35 @@ $hourly_data = [
 
     <script>
     // Gráfica de consumo por hora
-    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
-    new Chart(hourlyCtx, {
-        type: 'line',
-        data: {
-            labels: <?php echo json_encode(array_column($hourly_data, 'hora')); ?>,
-            datasets: [{
-                label: 'Consumo de Agua (L)',
-                data: <?php echo json_encode(array_column($hourly_data, 'consumo')); ?>,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Litros'
-                    }
-                }
+    Highcharts.chart('litros_h', {
+    title: {
+        text: 'Gráfico de Flujo de Agua'
+    },
+    xAxis: {
+        categories: <?php echo $fechas; ?>, // Usamos las fechas directamente desde JSON
+        labels: {
+            formatter: function() {
+                // Formatear la fecha para mostrar año-mes-dia hora:minuto:segundo
+                return Highcharts.dateFormat('%Y-%m-%d %H:%m:%S', new Date(this.value).getTime());
             }
         }
-    });
+    },
+    yAxis: {
+        title: {
+            text: 'Litros'
+        }
+    },
+    series: [
+        {
+            name: 'Litros por segundo (L/s)',
+            data: <?php echo $litros_seg; ?> // Usamos los litros por segundo desde JSON
+        },
+        {
+            name: 'Litros totales (L)',
+            data: <?php echo $flujo_agua_total; ?> // Usamos los litros totales desde JSON
+        }
+    ]
+});
 
     // Gráfica de consumo por zona
     const zoneCtx = document.getElementById('zoneChart').getContext('2d');

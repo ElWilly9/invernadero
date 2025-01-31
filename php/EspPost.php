@@ -11,9 +11,10 @@ if ($con) {
         echo "Humedad recibida: " . $humedad;
 
         date_default_timezone_set('America/Bogota');
-        $fecha_actual = date("Y-m-d H:i:s");
+        $fecha_actual = date("Y-m-d");
+        $hora_actual = date("H:i:s");
 
-        $consulta = "INSERT INTO hum_suelo(humedad, fecha_registro) VALUES ('$humedad', '$fecha_actual')";
+        $consulta = "INSERT INTO hum_suelo(humedad, fecha_registro, hora_registro) VALUES ('$humedad', '$fecha_actual', '$hora_actual')";
 
         $resultado = mysqli_query($con, $consulta);
 
@@ -32,9 +33,10 @@ if ($con) {
         echo "El flujo de agua recibido es: " . $flujo_agua;
 
         date_default_timezone_set('America/Bogota');
-        $fecha_actual = date("Y-m-d H:i:s");
+        $fecha_actual = date("Y-m-d");
+        $hora_actual = date("H:i:s");
 
-        $consulta = "INSERT INTO flujo_agua(Litros'-'seg, fecha_registro) VALUES ('$flujo_agua', '$fecha_actual')";
+        $consulta = "INSERT INTO flujo_agua(Litros'-'seg, fecha_registro, hora_registro) VALUES ('$flujo_agua', '$fecha_actual', '$hora_actual')";
 
         $resultado = mysqli_query($con, $consulta);
 
@@ -59,9 +61,10 @@ if ($con) {
         $hum = $_POST['hum'];
         echo "la humedad atmosferica es: " . $hum;
         date_default_timezone_set('America/Bogota');
-        $fecha_actual = date("Y-m-d H:i:s");
+        $fecha_actual = date("Y-m-d");
+        $hora_actual = date("H:i:s");
 
-        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente, humedad_ambiente, fecha_registro) VALUES ('$temp', '$hum', '$fecha_actual')";
+        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente, humedad_ambiente, fecha_registro, hora_registro) VALUES ('$temp', '$hum', '$fecha_actual', '$hora_actual')";
 
         $resultado = mysqli_query($con, $consulta);
 

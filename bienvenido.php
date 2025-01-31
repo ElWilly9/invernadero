@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - AgroVision</title>
+    <title>AgroVision</title>
     <link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
     <link rel="stylesheet" href="assets/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -110,7 +110,7 @@
         .fa-thermometer-half { color: #ff4500; } /* Rojo anaranjado para temperatura */
         .fa-wind { color: #87ceeb; } /* Azul claro para viento */
         .fa-tint { color: #1e90ff; } /* Azul agua para gota de agua */
-        .fa-bolt { color: #ffd700; } /* Dorado para energía */
+        .fa-leaf { color: #2d8a39; } /* Dorado para energía */
 
         /* Botón de cerrar sesión */
         .logout-button {
@@ -195,10 +195,10 @@
             <h2>Consumo de Agua</h2>
             <p>Seguimiento del uso de agua en el invernadero.</p>
         </a>
-        <a href="php/energia.php" class="box">
-            <i class="fas fa-bolt"></i>
-            <h2>Energía</h2>
-            <p>Monitoreo del consumo energético.</p>
+        <a href="php/clorofila.php" class="box">
+            <i class="fas fa-leaf"></i>
+            <h2>Clorofila</h2>
+            <p>Monitoreo de la clorofila en las plantas.</p>
         </a>
     </div>
 

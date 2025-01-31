@@ -26,7 +26,7 @@ while ($resultado = mysqli_fetch_array($consulta)) {
     // Datos para los gráficos de Chart.js
     $temp[] = floatval($resultado['temperatura_ambiente']);
     $hum[] = floatval($resultado['humedad_ambiente']);
-    $fechas[] = date('Y:m:d H:i:s', strtotime($resultado['fecha_registro']));
+    $fechas[] = date('H:i', strtotime($resultado['fecha_registro']));
     
     // Datos para AMCharts
     $datos_amchart[] = [
@@ -51,13 +51,15 @@ $hum_actual = !empty($hum) ? end($hum) : 0;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgroVision</title>
+    <title>Monitoreo de Temperatura y Humedad</title>
 	<link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -82,17 +84,6 @@ $hum_actual = !empty($hum) ? end($hum) : 0;
         h1, h2 {
             font-family: 'Arial', sans-serif;
         }
-        .chart-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin: 20px;
-        }
-        .chart {
-            flex: 1;
-            min-width: 400px;
-            height: 400px;
-        }
     </style>
 </head>
 <body>
@@ -106,7 +97,7 @@ $hum_actual = !empty($hum) ? end($hum) : 0;
                     </a>
                 </div>
                 <div class="flex items-center">
-                    <a href="cerrar_sesion.php" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <a href="php/cerrar_sesion.php" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
                         <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
                     </a>
                 </div>
@@ -145,15 +136,18 @@ $hum_actual = !empty($hum) ? end($hum) : 0;
         </div>
 
         <!-- Gráfico Principal -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="metric-card p-6 mb-8">
-                <div id="tempChart_h"></div>
-            </div>
-            
-            <div class="metric-card p-6 mb-8">
-                <div id="humChart_h"></div>
-            </div>
-        </div>
+        <div class="metric-card p-6 mb-8">
+    		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        		<div>
+            		<h2 class="text-xl font-semibold text-gray-800 mb-4">Historial de Temperatura</h2>
+            		<canvas id="historial"></canvas>
+        		</div>
+        		<div>
+            		<h2 class="text-xl font-semibold text-gray-800 mb-4">Historial de Humedad</h2>
+            		<canvas id="historial_hum"></canvas>
+        		</div>
+    		</div>
+		</div>
 
         <!-- Gráficos Secundarios -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -170,43 +164,85 @@ $hum_actual = !empty($hum) ? end($hum) : 0;
     </div>
 
     <script>
-        
-        // Datos de ejemplo (reemplaza con tus datos dinámicos)
-        const fechas = <?= $fecha_json ?>; // Formato: ["2023-10-01 12:00:00", "2023-10-01 13:00:00"]
-        const temperaturas = <?= $temp_json ?>; // [22, 23, 24]
-        const humedades = <?= $hum_json ?>; // [60, 62, 61]
+    // Configuración mejorada del gráfico AMCharts
+    am5.ready(function() {
+        const root = am5.Root.new("chartdiv");
+        root.setThemes([am5themes_Animated.new(root)]);
 
-        // Gráfico de Temperatura
+        const chart = root.container.children.push(am5xy.XYChart.new(root, {
+            panX: true,
+            panY: true,
+            wheelX: "panX",
+            wheelY: "zoomX",
+            pinchZoomX: true
+        }));
 
-        Highcharts.chart('tempChart_h', {
-        title: { text: 'Gráfico de Temperatura' },
-        xAxis: { categories: <?= $fecha_json ?>, labels: {
-                    formatter: function() {
-                        // Formatear la fecha para mostrar año-mes-dia hora:minuto:segundo
-                        return Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', new Date(this.value).getTime());
-                    }
-                } },
-        series: [{
-            name: 'Temperatura (°C)',
-            data: <?= $temp_json ?>
-            }]
-        });
+        // Ejes
+        const xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
+            baseInterval: { timeUnit: "minute", count: 1 },
+            renderer: am5xy.AxisRendererX.new(root, {
+                stroke: am5.color(0x64748b)
+            })
+        }));
 
-        // Gráfico de Humedad
-        Highcharts.chart('humChart_h', {
-        title: { text: 'Gráfico de Humedad' },
-        xAxis: { categories: <?= $fecha_json ?>, labels: {
-                    formatter: function() {
-                        // Formatear la fecha para mostrar año-mes-dia hora:minuto:segundo
-                        return Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', new Date(this.value).getTime());
-                    }
-                } },
-        series: [{
-            name: 'Humedad (%)',
-            data: <?= $hum_json ?>
-            }]
-        });
+        const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+            renderer: am5xy.AxisRendererY.new(root, {
+                stroke: am5.color(0x64748b)
+            })
+        }));
+
+        // Serie de Temperatura
+        const tempSeries = chart.series.push(am5xy.LineSeries.new(root, {
+            name: "Temperatura",
+            xAxis: xAxis,
+            yAxis: yAxis,
+            valueYField: "value",
+            valueXField: "date",
+            stroke: am5.color(0x3b82f6),
+            tooltip: am5.Tooltip.new(root, {
+                labelText: "{valueY}°C"
+            })
+        }));
+
+        tempSeries.data.setAll(<?= $amchart_json ?>);
+
+        // Animaciones
+        chart.appear(1000, 100);
+        tempSeries.appear();
+    });
+
+    // Gráfico de Temperatura con Chart.js
+    const tempCtx = document.getElementById('historial').getContext('2d');
+	new Chart(tempCtx, {
+    type: 'line',
+    data: {
+        labels: <?= $fecha_json ?>,
+        datasets: [{
+            label: 'Temperatura °C',
+            data: <?= $temp_json ?>,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4
+        	}]
+    		},
+	});
+
+// Gráfico de Humedad
+	const humCtx = document.getElementById('historial_hum').getContext('2d');
+	new Chart(humCtx, {
+    	type: 'line',
+    	data: {
+     		labels: <?= $fecha_json ?>,
+        	datasets: [{
+            	label: 'Humedad %',
+            	data: <?= $hum_json ?>,
+            	borderColor: '#10b981',
+            	backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            	tension: 0.4
+        	}]
+    	},
+	// ... resto de las opciones
+	});
     </script>
- 
 </body>
 </html>

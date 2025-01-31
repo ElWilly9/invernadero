@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoreo de Clorofila - AgroVisión</title>
+    <title>AgroVision</title>
     <link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .chlorophyll-bg {
-            background: linear-gradient(135deg, #e6f4ea 0%, #f8fcf3 100%);
+            background: linear-gradient(135deg, #e6f4ea 20%, #f8fcf3 80%);
         }
         .chlorophyll-card {
             background: rgba(255, 255, 255, 0.9);
@@ -37,9 +37,6 @@
         <div class="flex justify-between items-center">
             <!-- Parte izquierda -->
             <div class="flex items-center space-x-4">
-                <h1 class="text-xl font-bold text-green-800">
-                    <i class="fas fa-leaf mr-2"></i>Monitoreo de Clorofila
-                </h1>
                 <a href="../bienvenido.php" class="text-gray-600 hover:text-gray-800">
                     <i class="fas fa-arrow-left mr-2"></i>Volver al menú principal
                 </a>
@@ -47,13 +44,19 @@
 
             <!-- Parte derecha -->
             <div class="flex items-center space-x-4">
-                <a href="php/cerrar_sesion.php" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                <a href="cerrar_sesion.php" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
                     <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
                 </a>
             </div>
         </div>
     </div>
 </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Monitoreo de la clorofila en las plantas</h1>
+    </div>
 
     <div class="max-w-7xl mx-auto px-4 py-8">
         <!-- Header Metrics -->
