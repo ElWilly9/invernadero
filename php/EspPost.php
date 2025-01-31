@@ -61,7 +61,7 @@ if ($con) {
         $hum = $_POST['hum'];
         echo "la humedad atmosferica es: " . $hum;
         date_default_timezone_set('America/Bogota');
-        $fecha_actual = date("Y-m-d");
+        $fecha_actual = date("Y-m-d H:i:s");
         $hora_actual = date("H:i:s");
 
         $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente, humedad_ambiente, fecha_registro, hora_registro) VALUES ('$temp', '$hum', '$fecha_actual', '$hora_actual')";

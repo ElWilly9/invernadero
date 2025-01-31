@@ -43,9 +43,6 @@ $fecha_total = json_encode($fecha_total);
 $flujo_agua_total = json_encode($flujo_agua_total);
 $horas = json_encode($horas);
 
-echo '<pre>';
-print_r($fecha_total);
-echo '</pre>';
 
 // Simulación de datos - Reemplazar con datos reales de los sensores
 $current_flow = 2.5; // L/min
@@ -151,6 +148,7 @@ $hourly_data = [
     50% { clip-path: polygon(0 45%, 100% 45%, 100% 100%, 0% 100%); }
 }
 </style>
+
 <body class="consumo-bg"> 
     <nav class="bg-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
