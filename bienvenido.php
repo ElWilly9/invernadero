@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 if(!isset($_SESSION['usuario'])){
     echo '
         <script>
@@ -12,7 +11,6 @@ if(!isset($_SESSION['usuario'])){
     die();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -37,6 +35,13 @@ if(!isset($_SESSION['usuario'])){
             justify-content: center;
             min-height: 100vh;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Prevenir iconos flotantes */
+        body > i {
+            display: none !important;
         }
 
         /* Animación del degradado */
@@ -50,7 +55,9 @@ if(!isset($_SESSION['usuario'])){
         .header {
             text-align: center;
             margin-bottom: 40px;
-            margin-top: 80px; /* Ajuste para el banner */
+            margin-top: 80px;
+            position: relative;
+            z-index: 1;
         }
 
         .header h1 {
@@ -80,6 +87,9 @@ if(!isset($_SESSION['usuario'])){
             background: rgba(255, 255, 255, 0.9);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
             border-radius: 10px;
+            align-items: stretch;
+            position: relative;
+            z-index: 1;
         }
 
         .box {
@@ -96,6 +106,9 @@ if(!isset($_SESSION['usuario'])){
             align-items: center;
             justify-content: center;
             border: 1px solid #e0e0e0;
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
         }
 
         .box:hover {
@@ -107,29 +120,38 @@ if(!isset($_SESSION['usuario'])){
         .box i {
             font-size: 2.5rem;
             margin-bottom: 15px;
+            margin-right: 30px;
+            margin: center;
+            display: block;
+            position: relative;
+            z-index: 1;
         }
 
         .box h2 {
             font-size: 1.5rem;
             margin: 0;
             color: #333;
+            position: relative;
+            z-index: 1;
         }
 
         .box p {
             font-size: 1rem;
             color: #666;
             margin-top: 10px;
+            position: relative;
+            z-index: 1;
         }
 
         /* Colores personalizados para los iconos */
-        .fa-thermometer-half { color: #ff4500; } /* Rojo anaranjado para temperatura */
-        .fa-wind { color: #87ceeb; } /* Azul claro para viento */
-        .fa-tint { color: #1e90ff; } /* Azul agua para gota de agua */
-        .fa-leaf { color: #2d8a39; } /* Dorado para energía */
+        .fa-thermometer-half { color: #ff4500; }
+        .fa-wind { color: #87ceeb; }
+        .fa-tint { color: #1e90ff; }
+        .fa-leaf { color: #2d8a39; }
 
         /* Botón de cerrar sesión */
         .logout-button {
-            position: absolute;
+            position: fixed;
             top: 20px;
             right: 20px;
             background-color: #dc3545;
@@ -141,6 +163,7 @@ if(!isset($_SESSION['usuario'])){
             text-decoration: none;
             font-size: 1rem;
             transition: background-color 0.3s;
+            z-index: 1000;
         }
 
         .logout-button:hover {
@@ -152,6 +175,8 @@ if(!isset($_SESSION['usuario'])){
             margin-top: 40px;
             text-align: center;
             color: #fff;
+            position: relative;
+            z-index: 1;
         }
 
         .footer img {
@@ -165,23 +190,18 @@ if(!isset($_SESSION['usuario'])){
             .header h1 {
                 font-size: 2rem;
             }
-
             .panel-central {
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             }
-
             .box {
                 padding: 20px;
             }
-
             .box i {
                 font-size: 2rem;
             }
-
             .box h2 {
-                font-size: 1.2rem;
+                font-size: 1.rem;
             }
-
             .box p {
                 font-size: 0.9rem;
             }
@@ -216,7 +236,6 @@ if(!isset($_SESSION['usuario'])){
             <p>Monitoreo de la clorofila en las plantas.</p>
         </a>
     </div>
-
     <div class="footer">
         <img src="img/logo.png" alt="Logo">
         <p>&copy; 2025 AgroVision. Todos los derechos reservados.</p>
