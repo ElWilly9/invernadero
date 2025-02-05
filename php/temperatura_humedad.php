@@ -79,7 +79,7 @@ $suelo_json = json_encode($suelo);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
         .chart-container {
-            height: 400px;
+            height: 300px;
             position: relative;
         }
         .value-update {
@@ -107,41 +107,40 @@ $suelo_json = json_encode($suelo);
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 py-8">
-        <!-- Sección de Tiempo Real -->
+        <!-- Tiempo Real -->
         <div class="mb-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Monitoreo de Temperatura y Humedad</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Monitoreo en Tiempo Real</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Tarjeta de Temperatura -->
+                <!-- Tarjetas de valores actuales -->
                 <div class="glass-card p-6">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-sm text-gray-600">Temperatura ambiente Actual</p>
-                            <p class="text-3xl font-bold text-blue-600 rounded p-2" id="current-temp"><?= $temp_actual ?>°C</p>
+                            <p class="text-sm text-gray-600">Temperatura Actual</p>
+                            <p class="text-3xl font-bold text-blue-600" id="current-temp"><?= $temp_actual ?>°C</p>
                         </div>
                         <i class="fas fa-thermometer-half text-4xl text-blue-400"></i>
                     </div>
                 </div>
-                <!-- Tarjeta de Humedad Ambiente -->
                 <div class="glass-card p-6">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-sm text-gray-600">Humedad ambiente Actual</p>
-                            <p class="text-3xl font-bold text-green-600 rounded p-2" id="current-hum"><?= $hum_actual ?>%</p>
+                            <p class="text-sm text-gray-600">Humedad Actual</p>
+                            <p class="text-3xl font-bold text-green-600" id="current-hum"><?= $hum_actual ?>%</p>
                         </div>
                         <i class="fas fa-tint text-4xl text-green-400"></i>
                     </div>
                 </div>
-                <!-- Tarjeta de Humedad del Suelo -->
                 <div class="glass-card p-6">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-sm text-gray-600">Humedad del Suelo</p>
-                            <p class="text-3xl font-bold text-purple-600 rounded p-2" id="current-suelo"><?= $suelo_actual ?>%</p>
+                            <p class="text-3xl font-bold text-purple-600" id="current-suelo"><?= $suelo_actual ?>%</p>
                         </div>
                         <i class="fas fa-seedling text-4xl text-purple-400"></i>
                     </div>
                 </div>
             </div>
+            <!-- Gráfica tiempo real -->
             <div class="glass-card p-6 mt-6">
                 <h3 class="text-lg font-semibold mb-4">Gráfico en Tiempo Real</h3>
                 <div class="chart-container">
@@ -150,63 +149,78 @@ $suelo_json = json_encode($suelo);
             </div>
         </div>
 
-        <!-- Sección de Datos Históricos -->
         <div>
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Datos Históricos</h2>
+            
+            <!-- Temperatura -->
             <div class="glass-card p-6 mb-6">
-                <div class="flex flex-wrap gap-4 items-center">
-                    <select id="historicalRange" class="px-4 py-2 border rounded-lg">
-                        <option value="24h">Últimas 24 horas</option>
-                        <option value="7d">Últimos 7 días</option>
-                        <option value="30d">Últimos 30 días</option>
-                    </select>
-                    <button onclick="loadHistoricalData()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">
-                        Cargar Datos
-                    </button>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Temperatura Histórica (°C)</h3>
+                    <div class="flex gap-4">
+                        <select id="tempRange" class="px-4 py-2 border rounded-lg">
+                            <option value="24h">Últimas 24 horas</option>
+                            <option value="7d">Últimos 7 días</option>
+                            <option value="30d">Últimos 30 días</option>
+                        </select>
+                        <button onclick="loadTempData()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">
+                            Cargar Datos
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="tempHistoricalChart"></canvas>
                 </div>
             </div>
-            <div class="glass-card p-6">
-                <h3 class="text-lg font-semibold mb-4">Gráfico Histórico</h3>
+
+            <!-- Humedad -->
+            <div class="glass-card p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Humedad Histórica (%)</h3>
+                    <div class="flex gap-4">
+                        <select id="humRange" class="px-4 py-2 border rounded-lg">
+                            <option value="24h">Últimas 24 horas</option>
+                            <option value="7d">Últimos 7 días</option>
+                            <option value="30d">Últimos 30 días</option>
+                        </select>
+                        <button onclick="loadHumData()" class="px-4 py-2 bg-green-500 text-white rounded-lg">
+                            Cargar Datos
+                        </button>
+                    </div>
+                </div>
                 <div class="chart-container">
-                    <canvas id="historicalChart"></canvas>
+                    <canvas id="humHistoricalChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Humedad del Suelo -->
+            <div class="glass-card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Humedad del Suelo Histórica (%)</h3>
+                    <div class="flex gap-4">
+                        <select id="sueloRange" class="px-4 py-2 border rounded-lg">
+                            <option value="24h">Últimas 24 horas</option>
+                            <option value="7d">Últimos 7 días</option>
+                            <option value="30d">Últimos 30 días</option>
+                        </select>
+                        <button onclick="loadSueloData()" class="px-4 py-2 bg-purple-500 text-white rounded-lg">
+                            Cargar Datos
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="sueloHistoricalChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let realTimeChart, historicalChart;
+        let realTimeChart, tempHistoricalChart, humHistoricalChart, sueloHistoricalChart;
         let lastUpdate = '<?= end($fechas) ?>';
 
-        // Configuración del gráfico en tiempo real
-        const realTimeConfig = {
+        // Configuración base para gráficos históricos
+        const baseHistoricalConfig = {
             type: 'line',
-            data: {
-                labels: <?= $fechas_json ?>,
-                datasets: [
-                    {
-                        label: 'Temperatura ambiente °C',
-                        data: <?= $temp_json ?>,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Humedad ambiente %',
-                        data: <?= $hum_json ?>,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Humedad del Suelo %',
-                        data: <?= $suelo_json ?>,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        tension: 0.1
-                    }
-                ]
-            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -214,9 +228,9 @@ $suelo_json = json_encode($suelo);
                     x: {
                         type: 'time',
                         time: {
-                            unit: 'minute',
+                            unit: 'hour',
                             displayFormats: {
-                                minute: 'HH:mm'
+                                hour: 'dd/MM HH:mm'
                             }
                         },
                         ticks: {
@@ -237,16 +251,88 @@ $suelo_json = json_encode($suelo);
             }
         };
 
+        // Configuración del gráfico en tiempo real
+        const realTimeConfig = {
+            type: 'line',
+            data: {
+                labels: <?= $fechas_json ?>,
+                datasets: [
+                    {
+                        label: 'Temperatura °C',
+                        data: <?= $temp_json ?>,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Humedad %',
+                        data: <?= $hum_json ?>,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Humedad Suelo %',
+                        data: <?= $suelo_json ?>,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: baseHistoricalConfig.options
+        };
+
         // Inicializar gráficos
         function initCharts() {
             const realTimeCtx = document.getElementById('realTimeChart').getContext('2d');
-            const historicalCtx = document.getElementById('historicalChart').getContext('2d');
+            const tempCtx = document.getElementById('tempHistoricalChart').getContext('2d');
+            const humCtx = document.getElementById('humHistoricalChart').getContext('2d');
+            const sueloCtx = document.getElementById('sueloHistoricalChart').getContext('2d');
             
             realTimeChart = new Chart(realTimeCtx, realTimeConfig);
-            historicalChart = new Chart(historicalCtx, {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: realTimeConfig.options
+
+            // Inicializar gráficos históricos
+            tempHistoricalChart = new Chart(tempCtx, {
+                ...baseHistoricalConfig,
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Temperatura °C',
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.1,
+                        data: []
+                    }]
+                }
+            });
+
+            humHistoricalChart = new Chart(humCtx, {
+                ...baseHistoricalConfig,
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Humedad %',
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.1,
+                        data: []
+                    }]
+                }
+            });
+
+            sueloHistoricalChart = new Chart(sueloCtx, {
+                ...baseHistoricalConfig,
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Humedad Suelo %',
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.1,
+                        data: []
+                    }]
+                }
             });
         }
 
@@ -257,7 +343,7 @@ $suelo_json = json_encode($suelo);
                 const data = await response.json();
 
                 if(data.newData) {
-                    // Actualizar valores
+                    // Actualizar valores actuales
                     document.getElementById('current-temp').textContent = data.current.temp + '°C';
                     document.getElementById('current-hum').textContent = data.current.hum + '%';
                     document.getElementById('current-suelo').textContent = data.current.suelo + '%';
@@ -276,46 +362,56 @@ $suelo_json = json_encode($suelo);
             }
         }
 
-        // Cargar datos históricos
-        async function loadHistoricalData() {
-            const range = document.getElementById('historicalRange').value;
+        async function loadTempData() {
+            const range = document.getElementById('tempRange').value;
             try {
-                const response = await fetch(`fetch_historical.php?range=${range}`);
+                const response = await fetch(`fetch_historical.php?range=${range}&variable=temp`);
                 const data = await response.json();
-
-                historicalChart.data.labels = data.labels;
-                historicalChart.data.datasets = [
-                    {
-                        label: 'Temperatura °C',
-                        data: data.temp,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Humedad %',
-                        data: data.hum,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Humedad del Suelo %',
-                        data: data.suelo,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        tension: 0.1
-                    }
-                ];
-                historicalChart.update();
+                
+                tempHistoricalChart.data.labels = data.labels;
+                tempHistoricalChart.data.datasets[0].data = data.temp;
+                tempHistoricalChart.update();
             } catch (error) {
                 console.error('Error:', error);
             }
         }
 
-        // Inicializar y actualizar cada 2 segundos
+        async function loadHumData() {
+            const range = document.getElementById('humRange').value;
+            try {
+                const response = await fetch(`fetch_historical.php?range=${range}&variable=hum`);
+                const data = await response.json();
+                
+                humHistoricalChart.data.labels = data.labels;
+                humHistoricalChart.data.datasets[0].data = data.hum;
+                humHistoricalChart.update();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadSueloData() {
+            const range = document.getElementById('sueloRange').value;
+            try {
+                const response = await fetch(`fetch_historical.php?range=${range}&variable=suelo`);
+                const data = await response.json();
+                
+                sueloHistoricalChart.data.labels = data.labels;
+                sueloHistoricalChart.data.datasets[0].data = data.suelo;
+                sueloHistoricalChart.update();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Inicializar y actualizar cada 2 segundos el tiempo real
         initCharts();
         setInterval(updateData, 2000);
+        
+        // Cargar datos históricos iniciales
+        loadTempData();
+        loadHumData();
+        loadSueloData();
     </script>
 </body>
 </html>
