@@ -31,12 +31,15 @@ if ($con) {
     if (isset($_POST['flujo_agua'])) {
         $flujo_agua = $_POST['flujo_agua'];
         echo "El flujo de agua recibido es: " . $flujo_agua;
+        
+        $flujo_acumulado = $_POST['flujo_total'];
+        echo "El flujo de agua total recibido es: " . $flujo_acumulado;
 
         date_default_timezone_set('America/Bogota');
         $fecha_actual = date("Y-m-d");
         $hora_actual = date("H:i:s");
 
-        $consulta = "INSERT INTO flujo_agua(Litros'-'seg, fecha_registro, hora_registro) VALUES ('$flujo_agua', '$fecha_actual', '$hora_actual')";
+        $consulta = "INSERT INTO flujo_agua(litros_min, flujo_acumulado, fecha_registro, hora_registro) VALUES ('$flujo_agua', '$flujo_acumulado', '$fecha_actual', '$hora_actual')";
 
         $resultado = mysqli_query($con, $consulta);
 
