@@ -24,6 +24,13 @@
             overflow: hidden;
         }
 
+        /* Animación del degradado */
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         .decoracion {
             position: absolute;
             opacity: 0.1;
