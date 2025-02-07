@@ -1,44 +1,51 @@
 <?php
 session_start();
+include_once 'conexion.php';
+
 if(!isset($_SESSION['usuario'])){
-    echo '
-        <script>
-            alert("Por favor debes de iniciar sesion primero");
-            window.location = "../../index.php";
-        </script>
-    ';
-    session_destroy();
-    die();
+    header("Location: ../index.php");
+    exit();
 }
-include 'conexion.php';
 
-// Consulta para obtener los datos
-$SQL = "SELECT * FROM flujo_agua ORDER BY fecha_registro";
+// Consulta para obtener los últimos 50 registros con datos de consumo
+$SQL = "SELECT 
+    litros_min,
+    flujo_acumulado,
+    fecha_registro
+FROM flujo_agua
+ORDER BY fecha_registro DESC 
+LIMIT 50";
+
 $consulta = mysqli_query($con, $SQL);
-$litros_seg = [];
-$flujo_agua_total = [];
-$fecha_total = [];
-$fechas = [];
-$horas = [];
 
-while ($resultado = mysqli_fetch_array($consulta)) {
-    // Datos para los gráficos de Chart.js
-    $litros_min[] = floatval($resultado['litros_min']);
-    $flujo_agua_total[] = floatval($resultado['flujo_acumulado']);
-    $fecha_total = date('Y:m:d H:i:s', strtotime($resultado['fecha_registro']));
-    $fechas[] = date('Y:m:d', strtotime($resultado['fecha_registro']));
-    $horas[] = date('H:i:s', strtotime($resultado['fecha_registro']));
+$litros_min = [];
+$flujo_acumulado = [];
+$fechas = [];
+
+if($consulta && mysqli_num_rows($consulta) > 0){
+    while ($resultado = mysqli_fetch_assoc($consulta)) {
+        $litros_min[] = $resultado['litros_min'];
+        $flujo_acumulado[] = $resultado['flujo_acumulado'];
+        $fechas[] = $resultado['fecha_registro'];
+    }
+    
+    // Invertir para orden cronológico correcto
+    $litros_min = array_reverse($litros_min);
+    $flujo_acumulado = array_reverse($flujo_acumulado);
+    $fechas = array_reverse($fechas);
+    
+    // Valores actuales
+    $litros_min_actual = end($litros_min) ?: 'N/A';
+    $flujo_acumulado_actual = end($flujo_acumulado) ?: 'N/A';
+} else {
+    $litros_min_actual = 'N/A';
+    $flujo_acumulado_actual = 'N/A';
 }
 
-// Obtener valores actuales (último registro)
-$litros_min_actual = !empty($litros_min) ? end($litros_min) : 0;
-$consumo_actual = !empty($flujo_agua_total) ? end($flujo_agua_total) : 0;
-
-// Convertir a JSON para usar en JavaScript
+// Convertir a JSON para JavaScript
 $fechas_json = json_encode($fechas);
 $litros_min_json = json_encode($litros_min);
-$flujo_agua_total_json = json_encode($flujo_agua_total);
-$horas_json = json_encode($horas);
+$flujo_acumulado_json = json_encode($flujo_acumulado);
 ?>
 
 <!DOCTYPE html>
@@ -46,7 +53,7 @@ $horas_json = json_encode($horas);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgroVision</title>
+    <title>Consumo de Agua</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
@@ -63,17 +70,9 @@ $horas_json = json_encode($horas);
             height: 400px;
             position: relative;
         }
-        .value-update {
-            animation: highlight 1s ease-out;
-        }
-        @keyframes highlight {
-            0% { background-color: rgba(59, 130, 246, 0.1); }
-            100% { background-color: transparent; }
-        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen">
-    <!-- Navbar -->
     <nav class="bg-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
@@ -88,7 +87,6 @@ $horas_json = json_encode($horas);
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 py-8">
-        <!-- Sección de Tiempo Real -->
         <div class="mb-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Datos en Tiempo Real</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -96,7 +94,7 @@ $horas_json = json_encode($horas);
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-sm text-gray-600">Flujo Actual</p>
-                            <p class="text-3xl font-bold text-blue-600 rounded p-2" id="current-flow"><?= $litros_min_actual ?> L/seg</p>
+                            <p class="text-3xl font-bold text-blue-600 rounded p-2" id="current-flow"><?= $litros_min_actual ?> L/min</p>
                         </div>
                         <i class="fas fa-tint text-4xl text-blue-400"></i>
                     </div>
@@ -104,8 +102,8 @@ $horas_json = json_encode($horas);
                 <div class="glass-card p-6">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-sm text-gray-600">Consumo Diario</p>
-                            <p class="text-3xl font-bold text-green-600 rounded p-2"><?= $consumo_actual ?> L</p>
+                            <p class="text-sm text-gray-600">Consumo Acumulado</p>
+                            <p class="text-3xl font-bold text-green-600 rounded p-2" id="current-total"><?= $flujo_acumulado_actual ?> mL</p>
                         </div>
                         <i class="fas fa-chart-line text-4xl text-green-400"></i>
                     </div>
@@ -119,7 +117,6 @@ $horas_json = json_encode($horas);
             </div>
         </div>
 
-        <!-- Sección de Datos Históricos -->
         <div>
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Datos Históricos</h2>
             <div class="glass-card p-6 mb-6">
@@ -144,24 +141,28 @@ $horas_json = json_encode($horas);
     </div>
 
     <script>
+        // Datos precargados desde PHP
+        const labels = <?= $fechas_json ?>;
+        const litrosMin = <?= $litros_min_json ?>;
+        const flujoAcumulado = <?= $flujo_acumulado_json ?>;
+
         let realTimeChart, historicalChart;
 
-        // Configuración del gráfico en tiempo real
-        const realTimeConfig = {
+        const chartConfig = {
             type: 'line',
-            data: {
-                labels: <?= $fechas_json ?>,
+            data: { 
+                labels: labels, 
                 datasets: [
                     {
-                        label: 'Flujo de Agua (L/min)',
-                        data: <?= $litros_min_json ?>,
+                        label: 'Flujo (L/min)',
+                        data: litrosMin,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.1
                     },
                     {
-                        label: 'Flujo Total (L)',
-                        data: <?= $flujo_agua_total_json ?>,
+                        label: 'Flujo Acumulado (mL)',
+                        data: flujoAcumulado,
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         tension: 0.1
@@ -174,52 +175,44 @@ $horas_json = json_encode($horas);
                 scales: {
                     x: {
                         type: 'time',
-                        time: {
-                            unit: 'minute',
-                            displayFormats: {
-                                minute: 'HH:mm'
-                            }
+                        time: { 
+                            unit: 'minute', 
+                            displayFormats: { minute: 'HH:mm' } 
                         }
                     },
-                    y: {
-                        beginAtZero: false
+                    y: { 
+                        beginAtZero: false 
                     }
                 }
             }
         };
 
-        // Inicializar gráficos
         function initCharts() {
             const realTimeCtx = document.getElementById('realTimeChart').getContext('2d');
             const historicalCtx = document.getElementById('historicalChart').getContext('2d');
             
-            realTimeChart = new Chart(realTimeCtx, realTimeConfig);
-            historicalChart = new Chart(historicalCtx, {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: realTimeConfig.options
-            });
+            realTimeChart = new Chart(realTimeCtx, {...chartConfig});
+            historicalChart = new Chart(historicalCtx, {...chartConfig});
         }
 
-        // Cargar datos históricos
         async function loadHistoricalData() {
             const range = document.getElementById('historicalRange').value;
             try {
-                const response = await fetch(`fetch_historical.php?range=${range}`);
+                const response = await fetch(`consumo-agua-historico.php?range=${range}`);
                 const data = await response.json();
 
                 historicalChart.data.labels = data.labels;
                 historicalChart.data.datasets = [
                     {
-                        label: 'Flujo de Agua (L/seg)',
-                        data: data.flow,
+                        label: 'Flujo (L/min)',
+                        data: data.litrosMin,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.1
                     },
                     {
-                        label: 'Flujo Total (L)',
-                        data: data.totalFlow,
+                        label: 'Flujo Acumulado (mL)',
+                        data: data.flujoAcumulado,
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         tension: 0.1
@@ -227,12 +220,12 @@ $horas_json = json_encode($horas);
                 ];
                 historicalChart.update();
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error histórico:', error);
             }
         }
 
-        // Inicializar gráficos
-        initCharts();
+        // Inicializar gráficos al cargar la página
+        window.addEventListener('load', initCharts);
     </script>
 </body>
 </html>

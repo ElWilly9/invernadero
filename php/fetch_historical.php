@@ -13,54 +13,59 @@ $startDate = match($range) {
     default => date('Y-m-d H:i:s', strtotime('-24 hours'))
 };
 
-// Seleccionar columnas según la variable solicitada
-$columns = match($variable) {
-    'temp' => 'th.temperatura_ambiente',
-    'hum' => 'th.humedad_ambiente',
-    'suelo' => '(
-        SELECT hs.humedad
-        FROM hum_suelo hs
-        WHERE DATE(hs.fecha_registro) = DATE(th.fecha_registro)
-        AND ABS(TIME_TO_SEC(TIMEDIFF(hs.hora_registro, TIME(th.fecha_registro)))) < 60
-        ORDER BY ABS(TIME_TO_SEC(TIMEDIFF(hs.hora_registro, TIME(th.fecha_registro))))
-        LIMIT 1
-    ) as humedad',
-    default => 'th.temperatura_ambiente, th.humedad_ambiente, (
-        SELECT hs.humedad
-        FROM hum_suelo hs
-        WHERE DATE(hs.fecha_registro) = DATE(th.fecha_registro)
-        AND ABS(TIME_TO_SEC(TIMEDIFF(hs.hora_registro, TIME(th.fecha_registro)))) < 60
-        ORDER BY ABS(TIME_TO_SEC(TIMEDIFF(hs.hora_registro, TIME(th.fecha_registro))))
-        LIMIT 1
-    ) as humedad'
-};
-
-$SQL = "SELECT {$columns}, th.fecha_registro 
-        FROM temp_hum_amb th
-        WHERE th.fecha_registro >= '$startDate'
-        ORDER BY th.fecha_registro ASC";
+// Consulta base
+$SQL = "SELECT 
+            temperatura_ambiente1, 
+            temperatura_ambiente2, 
+            humedad_ambiente1, 
+            humedad_ambiente2, 
+            humedad1, 
+            humedad2, 
+            fecha_registro 
+        FROM temp_hum_amb
+        WHERE fecha_registro >= '$startDate'
+        ORDER BY fecha_registro ASC";
 
 $consulta = mysqli_query($con, $SQL);
 
 $response = [
     'labels' => [],
-    'temp' => [],
-    'hum' => [],
-    'suelo' => []
+    'temp1' => [],
+    'temp2' => [],
+    'hum1' => [],
+    'hum2' => [],
+    'suelo1' => [],
+    'suelo2' => []
 ];
 
 if($consulta && mysqli_num_rows($consulta) > 0) {
     while($fila = mysqli_fetch_assoc($consulta)) {
         $response['labels'][] = $fila['fecha_registro'];
         
-        if ($variable == 'temp' || $variable == 'all') {
-            $response['temp'][] = $fila['temperatura_ambiente'];
-        }
-        if ($variable == 'hum' || $variable == 'all') {
-            $response['hum'][] = $fila['humedad_ambiente'];
-        }
-        if ($variable == 'suelo' || $variable == 'all') {
-            $response['suelo'][] = $fila['humedad'];
+        switch ($variable) {
+            case 'temp':
+                $response['temp1'][] = $fila['temperatura_ambiente1'];
+                $response['temp2'][] = $fila['temperatura_ambiente2'];
+                break;
+            
+            case 'hum':
+                $response['hum1'][] = $fila['humedad_ambiente1'];
+                $response['hum2'][] = $fila['humedad_ambiente2'];
+                break;
+            
+            case 'suelo':
+                $response['suelo1'][] = $fila['humedad1'];
+                $response['suelo2'][] = $fila['humedad2'];
+                break;
+            
+            default:
+                $response['temp1'][] = $fila['temperatura_ambiente1'];
+                $response['temp2'][] = $fila['temperatura_ambiente2'];
+                $response['hum1'][] = $fila['humedad_ambiente1'];
+                $response['hum2'][] = $fila['humedad_ambiente2'];
+                $response['suelo1'][] = $fila['humedad1'];
+                $response['suelo2'][] = $fila['humedad2'];
+                break;
         }
     }
 }

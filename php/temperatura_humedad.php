@@ -66,15 +66,15 @@ if($consulta && mysqli_num_rows($consulta) > 0){
     $fechas = array_reverse($fechas);
     
     // Valores actuales
-    $temp1_actual = end($temp1);
-    $temp2_actual = end($temp2);
-    $hum1_actual = end($hum1);
-    $hum2_actual = end($hum2);
+    $temp1_actual = end($temp1) ?: 'N/A';
+    $temp2_actual = end($temp2) ?: 'N/A';
+    $hum1_actual = end($hum1) ?: 'N/A';
+    $hum2_actual = end($hum2) ?: 'N/A';
     $suelo1_actual = end($suelo1) ?: 'N/A';
     $suelo2_actual = end($suelo2) ?: 'N/A';
 } else {
-    $temp1_actual = $temp2_actual = 0;
-    $hum1_actual = $hum2_actual = 0;
+    $temp1_actual = $temp2_actual = 'N/A';
+    $hum1_actual = $hum2_actual = 'N/A';
     $suelo1_actual = $suelo2_actual = 'N/A';
 }
 
