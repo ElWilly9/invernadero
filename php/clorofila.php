@@ -102,12 +102,6 @@
                 <canvas id="mainChart"></canvas>
             </div>
 
-            <!-- Mapa de Distribución -->
-            <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
-                <h2 class="text-xl font-semibold text-green-800 mb-4">Distribución en Cultivo</h2>
-                <div id="map" class="h-96 rounded-lg"></div>
-            </div>
-
             <!-- Tabla de Valores -->
             <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
                 <h2 class="text-xl font-semibold text-green-800 mb-4">Últimas Mediciones</h2>
