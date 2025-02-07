@@ -1,6 +1,0 @@
-Field 	Type 	Null 	Key 	Default 	Extra 	
-id 	int(11) 	NO 	PRI 	NULL 	auto_increment
-litros_min 	float 	NO 		NULL 	
-flujo_acumulado 	decimal(10,2) 	YES 		NULL 	
-fecha_registro 	timestamp 	NO 		current_timestamp() 	on update current_timestamp()
-hora_registro 	timestamp 	NO 		0000-00-00 00:00:00 	
