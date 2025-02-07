@@ -1,3 +1,48 @@
+<?php
+// index.php - El dashboard principal
+session_start();
+include_once 'conexion.php';
+
+if(!isset($_SESSION['usuario'])){
+    header("Location: ../index.php");
+    exit();
+}
+
+// Obtener últimos 100 registros para tiempo real con datos de ambos sensores
+$SQL = "SELECT 
+    cl.valor_clorofila1,
+    cl.fecha_registro,
+    cl.hora_registro
+FROM clorofila cl
+ORDER BY cl.fecha_registro DESC 
+LIMIT 50";
+
+$consulta = mysqli_query($con, $SQL);
+
+$valor_clorofila = [];
+$fechas = [];
+
+if($consulta && mysqli_num_rows($consulta) > 0){
+    while ($resultado = mysqli_fetch_assoc($consulta)) {
+        $valor_clorofila[] = $resultado['valor_clorofila1'];
+        $fechas[] = $resultado['fecha_registro'];
+    }
+    
+    // Invertir para orden cronológico correcto
+    $valor_clorofila = array_reverse($valor_clorofila);
+    $fechas = array_reverse($fechas);
+    
+    // Valores actuales
+    $clorofila_actual = end($valor_clorofila);
+} else {
+    $clorofila_actual = 'N/A';
+}
+
+// Convertir a JSON para JavaScript
+$fechas_json = json_encode($fechas);
+$valor_clorofila_json = json_encode($valor_clorofila);
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -60,12 +105,12 @@
 
     <div class="max-w-7xl mx-auto px-4 py-8">
         <!-- Header Metrics -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">Nivel Actual (SPAD)</p>
-                        <p class="text-4xl font-bold text-green-800 mt-2">42.6</p>
+                        <p class="text-4xl font-bold text-green-800 mt-2"><?= $clorofila_actual ?></p>
                     </div>
                     <i class="fas fa-seedling text-3xl text-green-600"></i>
                 </div>
@@ -81,57 +126,14 @@
                     <i class="fas fa-heartbeat text-3xl text-red-400"></i>
                 </div>
             </div>
-            
-            <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Variación Diaria</p>
-                        <p class="text-2xl font-bold text-green-800 mt-2">+2.4%</p>
-                        <span class="text-sm text-green-600">vs. ayer</span>
-                    </div>
-                    <i class="fas fa-chart-line text-3xl text-blue-400"></i>
-                </div>
-            </div>
         </div>
 
         <!-- Main Content -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-1 gap-8">
             <!-- Gráfico Principal -->
             <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
                 <h2 class="text-xl font-semibold text-green-800 mb-4">Tendencia de Clorofila (SPAD)</h2>
                 <canvas id="mainChart"></canvas>
-            </div>
-
-            <!-- Tabla de Valores -->
-            <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
-                <h2 class="text-xl font-semibold text-green-800 mb-4">Últimas Mediciones</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="text-left text-green-800 border-b">
-                                <th class="pb-3">Hora</th>
-                                <th class="pb-3">Valor SPAD</th>
-                                <th class="pb-3">Estado</th>
-                                <th class="pb-3">Zona</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="border-b">
-                                <td class="py-3">08:00</td>
-                                <td class="text-green-700 font-medium">42.6</td>
-                                <td><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">Óptimo</span></td>
-                                <td>Zona A</td>
-                            </tr>
-                            <!-- Más filas... -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Comparación de Especies -->
-            <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
-                <h2 class="text-xl font-semibold text-green-800 mb-4">Comparación por Especie</h2>
-                <canvas id="speciesChart"></canvas>
             </div>
         </div>
     </div>
@@ -146,10 +148,10 @@
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: timeLabels,
+                labels: <?= $fechas_json ?>,
                 datasets: [{
                     label: 'Nivel de Clorofila (SPAD)',
-                    data: spadData,
+                    data: <?= $valor_clorofila_json ?>,
                     borderColor: '#2e7d32',
                     backgroundColor: 'rgba(46, 125, 50, 0.1)',
                     tension: 0.4,
@@ -165,37 +167,6 @@
                     y: {
                         title: { text: 'Unidades SPAD', display: true }
                     }
-                }
-            }
-        });
-
-        // Mapa Leaflet
-        const map = L.map('map').setView([4.710989, -74.072092], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        
-        // Marcadores ficticios
-        L.marker([4.710989, -74.072092], { icon: L.divIcon({ className: 'leaf-marker' }) }).addTo(map)
-            .bindPopup('Zona A: 42.6 SPAD');
-
-        // Gráfico de comparación
-        const speciesCtx = document.getElementById('speciesChart').getContext('2d');
-        new Chart(speciesCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Maíz', 'Trigo', 'Arroz', 'Soja'],
-                datasets: [{
-                    label: 'Nivel Promedio SPAD',
-                    data: [45.2, 38.7, 42.1, 40.5],
-                    backgroundColor: ['#2e7d32', '#66bb6a', '#a5d6a7', '#c8e6c9']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { title: { text: 'SPAD', display: true } }
                 }
             }
         });

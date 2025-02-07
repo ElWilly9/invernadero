@@ -23,39 +23,22 @@ $horas = [];
 
 while ($resultado = mysqli_fetch_array($consulta)) {
     // Datos para los gráficos de Chart.js
-    $litros_seg[] = floatval($resultado['litros_seg']);
-    $flujo_agua_total[] = floatval($resultado['flujo_agua_total']);
+    $litros_min[] = floatval($resultado['litros_min']);
+    $flujo_agua_total[] = floatval($resultado['flujo_acumulado']);
     $fecha_total = date('Y:m:d H:i:s', strtotime($resultado['fecha_registro']));
     $fechas[] = date('Y:m:d', strtotime($resultado['fecha_registro']));
     $horas[] = date('H:i:s', strtotime($resultado['fecha_registro']));
 }
 
 // Obtener valores actuales (último registro)
-$litros_seg_actual = !empty($litros_seg) ? end($litros_seg) : 0;
+$litros_min_actual = !empty($litros_min) ? end($litros_min) : 0;
+$consumo_actual = !empty($flujo_agua_total) ? end($flujo_agua_total) : 0;
 
 // Convertir a JSON para usar en JavaScript
 $fechas_json = json_encode($fechas);
-$litros_seg_json = json_encode($litros_seg);
+$litros_min_json = json_encode($litros_min);
 $flujo_agua_total_json = json_encode($flujo_agua_total);
 $horas_json = json_encode($horas);
-
-// Simulación de datos - Reemplazar con datos reales de los sensores
-$current_flow = 2.5; // L/min
-$daily_consumption = 450; // L
-$weekly_consumption = 2800; // L
-$monthly_consumption = 12500; // L
-
-// Datos para la gráfica por horas
-$hourly_data = [
-    ["hora" => "00:00", "consumo" => 15],
-    ["hora" => "03:00", "consumo" => 12],
-    ["hora" => "06:00", "consumo" => 25],
-    ["hora" => "09:00", "consumo" => 45],
-    ["hora" => "12:00", "consumo" => 38],
-    ["hora" => "15:00", "consumo" => 42],
-    ["hora" => "18:00", "consumo" => 30],
-    ["hora" => "21:00", "consumo" => 20]
-];
 ?>
 
 <!DOCTYPE html>
@@ -113,7 +96,7 @@ $hourly_data = [
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-sm text-gray-600">Flujo Actual</p>
-                            <p class="text-3xl font-bold text-blue-600 rounded p-2" id="current-flow"><?= $litros_seg_actual ?> L/seg</p>
+                            <p class="text-3xl font-bold text-blue-600 rounded p-2" id="current-flow"><?= $litros_min_actual ?> L/seg</p>
                         </div>
                         <i class="fas fa-tint text-4xl text-blue-400"></i>
                     </div>
@@ -122,7 +105,7 @@ $hourly_data = [
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-sm text-gray-600">Consumo Diario</p>
-                            <p class="text-3xl font-bold text-green-600 rounded p-2"><?= $daily_consumption ?> L</p>
+                            <p class="text-3xl font-bold text-green-600 rounded p-2"><?= $consumo_actual ?> L</p>
                         </div>
                         <i class="fas fa-chart-line text-4xl text-green-400"></i>
                     </div>
@@ -170,8 +153,8 @@ $hourly_data = [
                 labels: <?= $fechas_json ?>,
                 datasets: [
                     {
-                        label: 'Flujo de Agua (L/seg)',
-                        data: <?= $litros_seg_json ?>,
+                        label: 'Flujo de Agua (L/min)',
+                        data: <?= $litros_min_json ?>,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.1

@@ -1,56 +1,78 @@
 <?php
 session_start();
 include_once 'conexion.php';
+$lastUpdate = $_GET['last_update'] ?? date('Y-m-d H:i:s');
 
 header('Content-Type: application/json');
 
-$lastUpdate = $_GET['last_update'] ?? date('Y-m-d H:i:s');
+if(!isset($_SESSION['usuario'])){
+    http_response_code(401);
+    echo json_encode(['error' => 'No autorizado']);
+    exit();
+}
 
+// Consulta simple tratando humedad1 y humedad2 como columnas de temp_hum_amb
 $SQL = "SELECT 
-    th.temperatura_ambiente,
-    th.humedad_ambiente,
-    th.fecha_registro,
-    (
-        SELECT hs.humedad
-        FROM hum_suelo hs
-        WHERE DATE(hs.fecha_registro) = DATE(th.fecha_registro)
-        AND ABS(TIME_TO_SEC(TIMEDIFF(hs.hora_registro, TIME(th.fecha_registro)))) < 60
-        ORDER BY ABS(TIME_TO_SEC(TIMEDIFF(hs.hora_registro, TIME(th.fecha_registro))))
-        LIMIT 1
-    ) as humedad
-FROM temp_hum_amb th
-WHERE th.fecha_registro > '$lastUpdate'
-ORDER BY th.fecha_registro ASC";
+    temperatura_ambiente1,
+    temperatura_ambiente2,
+    humedad_ambiente1,
+    humedad_ambiente2,
+    humedad1,
+    humedad2,
+    fecha_registro
+FROM temp_hum_amb 
+WHERE fecha_registro > ?
+ORDER BY fecha_registro ASC";
 
-$consulta = mysqli_query($con, $SQL);
+$stmt = mysqli_prepare($con, $SQL);
+mysqli_stmt_bind_param($stmt, 's', $lastUpdate);
+mysqli_stmt_execute($stmt);
+$consulta = mysqli_stmt_get_result($stmt);
 
 $response = [
     'newData' => false,
-    'current' => [
-        'temp' => 0,
-        'hum' => 0,
-        'suelo' => 'N/A'
-    ],
-    'newTemp' => [],
-    'newHum' => [],
-    'newSuelo' => [],
     'newDates' => [],
+    'newTemp1' => [],
+    'newTemp2' => [],
+    'newHum1' => [],
+    'newHum2' => [],
+    'newSuelo1' => [],
+    'newSuelo2' => [],
+    'current' => [
+        'temp1' => 'N/A',
+        'temp2' => 'N/A',
+        'hum1' => 'N/A',
+        'hum2' => 'N/A',
+        'suelo1' => 'N/A',
+        'suelo2' => 'N/A'
+    ],
     'last_update' => $lastUpdate
 ];
 
-if($consulta && mysqli_num_rows($consulta) > 0) {
-    while($fila = mysqli_fetch_assoc($consulta)) {
-        $response['newTemp'][] = $fila['temperatura_ambiente'];
-        $response['newHum'][] = $fila['humedad_ambiente'];
-        $response['newSuelo'][] = $fila['humedad'];
-        $response['newDates'][] = $fila['fecha_registro'];
-    }
-    
+if($consulta && mysqli_num_rows($consulta) > 0){
     $response['newData'] = true;
-    $response['current']['temp'] = end($response['newTemp']);
-    $response['current']['hum'] = end($response['newHum']);
-    $response['current']['suelo'] = end($response['newSuelo']) ?: 'N/A';
-    $response['last_update'] = end($response['newDates']);
+    
+    while ($row = mysqli_fetch_assoc($consulta)) {
+        $response['newDates'][] = $row['fecha_registro'];
+        $response['newTemp1'][] = $row['temperatura_ambiente1'] !== null ? floatval($row['temperatura_ambiente1']) : null;
+        $response['newTemp2'][] = $row['temperatura_ambiente2'] !== null ? floatval($row['temperatura_ambiente2']) : null;
+        $response['newHum1'][] = $row['humedad_ambiente1'] !== null ? floatval($row['humedad_ambiente1']) : null;
+        $response['newHum2'][] = $row['humedad_ambiente2'] !== null ? floatval($row['humedad_ambiente2']) : null;
+        $response['newSuelo1'][] = $row['humedad1'] !== null ? floatval($row['humedad1']) : null;
+        $response['newSuelo2'][] = $row['humedad2'] !== null ? floatval($row['humedad2']) : null;
+        
+        // Actualizar valores actuales
+        $response['current'] = [
+            'temp1' => $row['temperatura_ambiente1'] ?? 'N/A',
+            'temp2' => $row['temperatura_ambiente2'] ?? 'N/A',
+            'hum1' => $row['humedad_ambiente1'] ?? 'N/A',
+            'hum2' => $row['humedad_ambiente2'] ?? 'N/A',
+            'suelo1' => $row['humedad1'] ?? 'N/A',
+            'suelo2' => $row['humedad2'] ?? 'N/A'
+        ];
+        
+        $response['last_update'] = $row['fecha_registro'];
+    }
 }
 
 echo json_encode($response);
