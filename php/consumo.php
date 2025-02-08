@@ -147,6 +147,7 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
         const flujoAcumulado = <?= $flujo_acumulado_json ?>;
 
         let realTimeChart, historicalChart;
+        let lastUpdate = '<?= end($fechas) ?>'; // Última fecha registrada
 
         const chartConfig = {
             type: 'line',
@@ -191,8 +192,44 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
             const realTimeCtx = document.getElementById('realTimeChart').getContext('2d');
             const historicalCtx = document.getElementById('historicalChart').getContext('2d');
             
-            realTimeChart = new Chart(realTimeCtx, {...chartConfig});
-            historicalChart = new Chart(historicalCtx, {...chartConfig});
+            realTimeChart = new Chart(realTimeCtx, { ...chartConfig });
+            historicalChart = new Chart(historicalCtx, { ...chartConfig });
+
+            // Inicia la actualización en tiempo real
+            setInterval(loadRealTimeData, 2000);
+        }
+
+        // Función para cargar datos en tiempo real
+        async function loadRealTimeData() {
+            const response = await fetch(`fetch_consumo.php?last_update=${lastUpdate}`);
+            const data = await response.json();
+            
+            if (data.newData) {
+                // Actualiza los datos de la gráfica
+                const newDates = data.newDates;
+                const newLitrosMin = data.newLitrosMin;
+                const newFlujoAcumulado = data.newFlujoAcumulado;
+
+                // Agregar nuevos datos a las gráficas
+                realTimeChart.data.labels.push(...newDates);
+                realTimeChart.data.datasets[0].data.push(...newLitrosMin);
+                realTimeChart.data.datasets[1].data.push(...newFlujoAcumulado);
+                
+                // Actualiza los valores actuales
+                document.getElementById('current-flow').innerText = newLitrosMin[newLitrosMin.length - 1] + " L/min";
+                document.getElementById('current-total').innerText = newFlujoAcumulado[newFlujoAcumulado.length - 1] + " mL";
+
+                // Mantener solo los últimos 100 puntos
+                if (realTimeChart.data.labels.length > 100) {
+                    realTimeChart.data.labels = realTimeChart.data.labels.slice(-100);
+                    realTimeChart.data.datasets.forEach(dataset => {
+                        dataset.data = dataset.data.slice(-100);
+                    });
+                }
+
+                realTimeChart.update(); // Actualiza la gráfica
+                lastUpdate = data.last_update; // Actualiza la última fecha
+            }
         }
 
         async function loadHistoricalData() {

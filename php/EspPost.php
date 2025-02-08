@@ -6,15 +6,17 @@ if ($con) {
     echo "Conexion con base de datos exitosa! ";
 
     /*humedad suelo*/
-    if (isset($_POST['humedad'])) {
-        $humedad = $_POST['humedad'];
-        echo "Humedad recibida: " . $humedad;
+    if (isset($_POST['humedad1'])) {
+        $humedad1 = $_POST['humedad1'];
+        echo "Humedad recibida del sensor 1 es: " . $humedad1;
+        $humedad2 = $_POST['humedad2'];
+        echo "Humedad recibida del sensor 1 es: " . $humedad2;
 
         date_default_timezone_set('America/Bogota');
         $fecha_actual = date("Y-m-d");
         $hora_actual = date("H:i:s");
 
-        $consulta = "INSERT INTO hum_suelo(humedad, fecha_registro, hora_registro) VALUES ('$humedad', '$fecha_actual', '$hora_actual')";
+        $consulta = "INSERT INTO hum_suelo(humedad1, humedad2, fecha_registro, hora_registro) VALUES ('$humedad1', '$humedad2', '$fecha_actual', '$hora_actual')";
 
         $resultado = mysqli_query($con, $consulta);
 
@@ -53,21 +55,26 @@ if ($con) {
     }
 
     /*temperatura y humedad atmosferica*/
-    if (isset($_POST['temp'])) {
-        $temp = $_POST['temp'];
-        echo "la temperatura atmosferica es: " . $temp;
+    if (isset($_POST['temp1'])) {
+        $temp1 = $_POST['temp1'];
+        echo "la temperatura atmosferica del sensor 1 es: " . $temp1;
+        $temp2 = $_POST['temp2'];
+        echo "la temperatura atmosferica del sensor 2 es: " . $temp2;
     }else{
         echo " No se recibió el dato de temperatura. ";
     }
     
-    if (isset($_POST['hum'])) {
-        $hum = $_POST['hum'];
-        echo "la humedad atmosferica es: " . $hum;
+    if (isset($_POST['hum1'])) {
+        $hum1 = $_POST['hum1'];
+        echo "la humedad atmosferica es: " . $hum1;
+        $hum2 = $_POST['hum2'];
+        echo "la humedad atmosferica es: " . $hum2;
+
         date_default_timezone_set('America/Bogota');
         $fecha_actual = date("Y-m-d H:i:s");
         $hora_actual = date("H:i:s");
 
-        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente, humedad_ambiente, fecha_registro, hora_registro) VALUES ('$temp', '$hum', '$fecha_actual', '$hora_actual')";
+        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente1, temperatura_ambiente2, humedad_ambiente1, humedad_ambiente2, fecha_registro, hora_registro) VALUES ('$temp1', '$temp2', '$hum1', '$hum2', '$fecha_actual', '$hora_actual')";
 
         $resultado = mysqli_query($con, $consulta);
 
