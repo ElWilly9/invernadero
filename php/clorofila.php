@@ -212,43 +212,64 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
     </div>
 
     <script>
-        // Gráfico principal con configuración mejorada
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: <?= $fechas_json ?>,
-                datasets: [{
-                    label: 'Nivel de Clorofila (SPAD)',
-                    data: <?= $valor_clorofila_json ?>,
-                    borderColor: '#2e7d32',
-                    backgroundColor: 'rgba(46, 125, 50, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: <?= $fechas_json ?>,
+            datasets: [{
+                label: 'Nivel de Clorofila (SPAD)',
+                data: <?= $valor_clorofila_json ?>,
+                borderColor: '#2e7d32',
+                backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' }
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' }
+            scales: {
+                x: {
+                    ticks: {
+                        maxTicksLimit: 8,
+                        maxRotation: 0,
+                        minRotation: 0
+                    }
                 },
-                scales: {
-                    x: {
-                        ticks: {
-                            maxTicksLimit: 8, // Limita el número de etiquetas en el eje X
-                            maxRotation: 0,
-                            minRotation: 0
-                        }
-                    },
-                    y: {
-                        title: { 
-                            text: 'Unidades SPAD', 
-                            display: true 
-                        }
+                y: {
+                    title: { 
+                        text: 'Unidades SPAD', 
+                        display: true 
                     }
                 }
             }
-        });
-    </script>
+        }
+    });
+
+    function updateChart() {
+        fetch('get_data.php')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Verifica si hay nuevos datos
+                if (data.fechas.length > 0) {
+                    myChart.data.labels = data.fechas;
+                    myChart.data.datasets[0].data = data.valores;
+                    myChart.update();
+                }
+            })
+            .catch(error => console.error('Error al obtener datos:', error));
+    }
+
+    // Actualiza el gráfico cada 5 segundos
+    setInterval(updateChart, 5000);
+</script>
 </body>
 </html>
