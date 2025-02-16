@@ -1,39 +1,53 @@
 <?php
 session_start();
 include_once 'conexion.php';
-header('Content-Type: application/json');
 
+if (!isset($_SESSION['usuario'])) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'No autorizado']);
+    exit();
+}
+
+// Obtener el rango de tiempo solicitado
 $range = $_GET['range'] ?? '24h';
 
-$startDate = match($range) {
-    '24h' => date('Y-m-d H:i:s', strtotime('-24 hours')),
-    '7d' => date('Y-m-d H:i:s', strtotime('-7 days')),
-    '30d' => date('Y-m-d H:i:s', strtotime('-30 days')),
-};
+// Preparar la consulta según el rango
+switch ($range) {
+    case '7d':
+        $timeLimit = 'DATE_SUB(NOW(), INTERVAL 7 DAY)';
+        break;
+    case '30d':
+        $timeLimit = 'DATE_SUB(NOW(), INTERVAL 30 DAY)';
+        break;
+    default: // 24h
+        $timeLimit = 'DATE_SUB(NOW(), INTERVAL 24 HOUR)';
+}
 
+// Consulta para obtener datos históricos
 $SQL = "SELECT 
     litros_min,
     flujo_acumulado,
-    fecha_registro 
-FROM flujo_agua 
-WHERE fecha_registro >= '$startDate' 
+    fecha_registro
+FROM flujo_agua
+WHERE fecha_registro >= {$timeLimit}
 ORDER BY fecha_registro ASC";
 
 $consulta = mysqli_query($con, $SQL);
 
-$response = [
+$data = [
     'labels' => [],
-    'litrosMin' => [],
-    'flujoAcumulado' => []
+    'litros_min' => [],
+    'flujo_acumulado' => []
 ];
 
-if($consulta && mysqli_num_rows($consulta) > 0) {
-    while($fila = mysqli_fetch_assoc($consulta)) {
-        $response['labels'][] = $fila['fecha_registro'];
-        $response['litrosMin'][] = floatval($fila['litros_min']);
-        $response['flujoAcumulado'][] = floatval($fila['flujo_acumulado']);
+if ($consulta && mysqli_num_rows($consulta) > 0) {
+    while ($resultado = mysqli_fetch_assoc($consulta)) {
+        $data['labels'][] = $resultado['fecha_registro'];
+        $data['litros_min'][] = floatval($resultado['litros_min']);
+        $data['flujo_acumulado'][] = floatval($resultado['flujo_acumulado']);
     }
 }
 
-echo json_encode($response);
+header('Content-Type: application/json');
+echo json_encode($data);
 ?>

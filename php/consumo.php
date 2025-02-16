@@ -54,6 +54,7 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consumo de Agua</title>
+    <link rel="icon" href="https://img.icons8.com/?size=100&id=80791&format=png&color=000000" type="image/x-icon">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
@@ -126,7 +127,7 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
                         <option value="7d">Últimos 7 días</option>
                         <option value="30d">Últimos 30 días</option>
                     </select>
-                    <button onclick="loadHistoricalData()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">
+                    <button onclick="loadHistoricalData()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
                         Cargar Datos
                     </button>
                 </div>
@@ -141,128 +142,196 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
     </div>
 
     <script>
-        // Datos precargados desde PHP
-        const labels = <?= $fechas_json ?>;
-        const litrosMin = <?= $litros_min_json ?>;
-        const flujoAcumulado = <?= $flujo_acumulado_json ?>;
+    // Datos precargados desde PHP
+    const labels = <?= $fechas_json ?>;
+    const litrosMin = <?= $litros_min_json ?>;
+    const flujoAcumulado = <?= $flujo_acumulado_json ?>;
 
-        let realTimeChart, historicalChart;
-        let lastUpdate = '<?= end($fechas) ?>'; // Última fecha registrada
+    let realTimeChart, historicalChart;
+    let lastUpdate = '<?= end($fechas) ?>'; // Última fecha registrada
 
-        const chartConfig = {
-            type: 'line',
-            data: { 
-                labels: labels, 
-                datasets: [
-                    {
-                        label: 'Flujo (L/min)',
-                        data: litrosMin,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Flujo Acumulado (mL)',
-                        data: flujoAcumulado,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: { 
-                            unit: 'minute', 
-                            displayFormats: { minute: 'HH:mm' } 
+    const chartConfig = {
+        type: 'line',
+        data: { 
+            labels: labels, 
+            datasets: [
+                {
+                    label: 'Flujo (L/min)',
+                    data: litrosMin,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Flujo Acumulado (mL)',
+                    data: flujoAcumulado,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { 
+                        unit: 'minute', 
+                        displayFormats: { 
+                            minute: 'HH:mm',
+                            hour: 'HH:mm',
+                            day: 'MMM d',
+                            week: 'MMM d'
                         }
-                    },
-                    y: { 
-                        beginAtZero: false 
                     }
+                },
+                y: { 
+                    beginAtZero: false 
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
                 }
             }
-        };
-
-        function initCharts() {
-            const realTimeCtx = document.getElementById('realTimeChart').getContext('2d');
-            const historicalCtx = document.getElementById('historicalChart').getContext('2d');
-            
-            realTimeChart = new Chart(realTimeCtx, { ...chartConfig });
-            historicalChart = new Chart(historicalCtx, { ...chartConfig });
-
-            // Inicia la actualización en tiempo real
-            setInterval(loadRealTimeData, 2000);
         }
+    };
 
-        // Función para cargar datos en tiempo real
-        async function loadRealTimeData() {
-            const response = await fetch(`fetch_consumo.php?last_update=${lastUpdate}`);
+    // Función para cargar datos históricos
+    async function loadHistoricalData() {
+        try {
+            const range = document.getElementById('historicalRange').value;
+            const response = await fetch(`consumo-agua-historico.php?range=${range}`);
+            
+            if (!response.ok) throw new Error('Error en la respuesta del servidor');
+            
+            const data = await response.json();
+            
+            // Actualizar datos del gráfico histórico
+            historicalChart.data.labels = data.labels;
+            historicalChart.data.datasets[0].data = data.litros_min;
+            historicalChart.data.datasets[1].data = data.flujo_acumulado;
+            
+            // Ajustar las escalas de tiempo según el rango
+            const timeUnit = range === '24h' ? 'hour' : range === '7d' ? 'day' : 'week';
+            historicalChart.options.scales.x.time.unit = timeUnit;
+            
+            // Actualizar el gráfico
+            historicalChart.update();
+        } catch (error) {
+            console.error('Error al cargar datos históricos:', error);
+            alert('Error al cargar los datos históricos');
+        }
+    }
+
+    // Función para cargar datos en tiempo real
+    async function loadRealTimeData() {
+        try {
+            const response = await fetch(`fetch_consumo.php?last_update=${encodeURIComponent(lastUpdate)}`);
+            if (!response.ok) throw new Error('Error en la respuesta del servidor');
+            
             const data = await response.json();
             
             if (data.newData) {
                 // Actualiza los datos de la gráfica
-                const newDates = data.newDates;
-                const newLitrosMin = data.newLitrosMin;
-                const newFlujoAcumulado = data.newFlujoAcumulado;
-
-                // Agregar nuevos datos a las gráficas
-                realTimeChart.data.labels.push(...newDates);
-                realTimeChart.data.datasets[0].data.push(...newLitrosMin);
-                realTimeChart.data.datasets[1].data.push(...newFlujoAcumulado);
+                realTimeChart.data.labels.push(...data.newDates);
+                realTimeChart.data.datasets[0].data.push(...data.newLitrosMin);
+                realTimeChart.data.datasets[1].data.push(...data.newFlujoAcumulado);
                 
                 // Actualiza los valores actuales
-                document.getElementById('current-flow').innerText = newLitrosMin[newLitrosMin.length - 1] + " L/min";
-                document.getElementById('current-total').innerText = newFlujoAcumulado[newFlujoAcumulado.length - 1] + " mL";
+                const lastLitrosMin = data.newLitrosMin[data.newLitrosMin.length - 1];
+                const lastFlujoAcumulado = data.newFlujoAcumulado[data.newFlujoAcumulado.length - 1];
+                
+                document.getElementById('current-flow').innerText = `${lastLitrosMin.toFixed(2)} L/min`;
+                document.getElementById('current-total').innerText = `${lastFlujoAcumulado.toFixed(2)} mL`;
 
-                // Mantener solo los últimos 100 puntos
-                if (realTimeChart.data.labels.length > 100) {
-                    realTimeChart.data.labels = realTimeChart.data.labels.slice(-100);
+                // Mantener solo los últimos 50 puntos para mejor rendimiento
+                if (realTimeChart.data.labels.length > 50) {
+                    realTimeChart.data.labels = realTimeChart.data.labels.slice(-50);
                     realTimeChart.data.datasets.forEach(dataset => {
-                        dataset.data = dataset.data.slice(-100);
+                        dataset.data = dataset.data.slice(-50);
                     });
                 }
 
-                realTimeChart.update(); // Actualiza la gráfica
-                lastUpdate = data.last_update; // Actualiza la última fecha
+                realTimeChart.update('none'); // Actualización más eficiente
+                lastUpdate = data.last_update;
             }
+        } catch (error) {
+            console.error('Error al cargar datos en tiempo real:', error);
         }
+    }
 
-        async function loadHistoricalData() {
-            const range = document.getElementById('historicalRange').value;
-            try {
-                const response = await fetch(`consumo-agua-historico.php?range=${range}`);
-                const data = await response.json();
+    // Inicializar la actualización en tiempo real
+    function initRealTimeUpdates() {
+        // Primera carga inmediata
+        loadRealTimeData();
+        
+        // Configurar intervalo de actualización
+        const updateInterval = setInterval(loadRealTimeData, 2000);
+        
+        // Limpiar intervalo cuando la página se oculta
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearInterval(updateInterval);
+            } else {
+                // Reanudar actualizaciones cuando la página está visible
+                loadRealTimeData();
+                setInterval(loadRealTimeData, 2000);
+            }
+        });
+    }
 
-                historicalChart.data.labels = data.labels;
-                historicalChart.data.datasets = [
-                    {
-                        label: 'Flujo (L/min)',
-                        data: data.litrosMin,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.1
+    // Función para inicializar los gráficos
+    function initCharts() {
+        const realTimeCtx = document.getElementById('realTimeChart').getContext('2d');
+        const historicalCtx = document.getElementById('historicalChart').getContext('2d');
+        
+        // Inicializar gráfico en tiempo real
+        realTimeChart = new Chart(realTimeCtx, { 
+            ...chartConfig,
+            options: {
+                ...chartConfig.options,
+                animation: {
+                    duration: 0
+                }
+            }
+        });
+        
+        // Inicializar gráfico histórico
+        historicalChart = new Chart(historicalCtx, {
+            ...chartConfig,
+            options: {
+                ...chartConfig.options,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'hour',
+                            displayFormats: {
+                                hour: 'HH:mm',
+                                day: 'MMM d',
+                                week: 'MMM d'
+                            }
+                        }
                     },
-                    {
-                        label: 'Flujo Acumulado (mL)',
-                        data: data.flujoAcumulado,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.1
+                    y: {
+                        beginAtZero: false
                     }
-                ];
-                historicalChart.update();
-            } catch (error) {
-                console.error('Error histórico:', error);
+                }
             }
-        }
+        });
 
-        // Inicializar gráficos al cargar la página
-        window.addEventListener('load', initCharts);
-    </script>
+        // Cargar datos históricos iniciales
+        loadHistoricalData();
+        
+        // Iniciar actualizaciones en tiempo real
+        initRealTimeUpdates();
+    }
+
+    // Inicializar gráficos al cargar la página
+    window.addEventListener('load', initCharts);
+</script>
 </body>
 </html>

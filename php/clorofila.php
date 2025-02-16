@@ -8,7 +8,7 @@ if(!isset($_SESSION['usuario'])){
     exit();
 }
 
-// Obtener últimos 100 registros para tiempo real con datos de ambos sensores
+// Obtener últimos 50 registros para tiempo real con datos de ambos sensores
 $SQL = "SELECT 
     cl.valor_clorofila1,
     cl.fecha_registro,
@@ -18,14 +18,20 @@ ORDER BY cl.fecha_registro DESC
 LIMIT 50";
 
 $consulta = mysqli_query($con, $SQL);
-
-$valor_clorofila = [];
-$fechas = [];
+$datos = [];
 
 if($consulta && mysqli_num_rows($consulta) > 0){
     while ($resultado = mysqli_fetch_assoc($consulta)) {
+        // Formatear la fecha para quitar la hora
+        $fecha_formateada = date('Y-m-d', strtotime($resultado['fecha_registro']));
+        $hora_formateada = date('H:i:s', strtotime($resultado['fecha_registro']));
+        $datos[] = [
+            'fecha_registro' => $fecha_formateada,
+            'hora_registro' => $hora_formateada,
+            'valor_clorofila1' => $resultado['valor_clorofila1']
+        ];
         $valor_clorofila[] = $resultado['valor_clorofila1'];
-        $fechas[] = $resultado['fecha_registro'];
+        $fechas[] = $fecha_formateada;
     }
     
     // Invertir para orden cronológico correcto
@@ -36,11 +42,22 @@ if($consulta && mysqli_num_rows($consulta) > 0){
     $clorofila_actual = end($valor_clorofila);
 } else {
     $clorofila_actual = 'N/A';
+    $datos = [];
+    $valor_clorofila = [];
+    $fechas = [];
 }
 
 // Convertir a JSON para JavaScript
 $fechas_json = json_encode($fechas);
 $valor_clorofila_json = json_encode($valor_clorofila);
+
+// Obtener página actual para la paginación
+$pagina_actual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+$registros_por_pagina = 10;
+$total_registros = count($datos);
+$total_paginas = ceil($total_registros / $registros_por_pagina);
+$inicio = ($pagina_actual - 1) * $registros_por_pagina;
+$datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
 ?>
 
 <!DOCTYPE html>
@@ -129,21 +146,73 @@ $valor_clorofila_json = json_encode($valor_clorofila);
         </div>
 
         <!-- Main Content -->
-        <div class="grid grid-cols-1 lg:grid-cols-1 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Gráfico Principal -->
             <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
                 <h2 class="text-xl font-semibold text-green-800 mb-4">Tendencia de Clorofila (SPAD)</h2>
                 <canvas id="mainChart"></canvas>
             </div>
+
+            <!-- Tabla de Mediciones -->
+            <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
+                <h2 class="text-xl font-semibold text-green-800 mb-4">Últimas Mediciones</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr>
+                                <th class="py-2 px-4 border-b">Fecha</th>
+                                <th class="py-2 px-4 border-b">Hora</th>
+                                <th class="py-2 px-4 border-b">Valor Clorofila (SPAD)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            if (!empty($datos_pagina)) {
+                                foreach($datos_pagina as $resultado) {
+                                    echo "<tr>";
+                                    echo "<td class='py-2 px-4 border-b'>" . $resultado['fecha_registro'] . "</td>";
+                                    echo "<td class='py-2 px-4 border-b'>" . $resultado['hora_registro'] . "</td>";
+                                    echo "<td class='py-2 px-4 border-b'>" . $resultado['valor_clorofila1'] . "</td>";
+                                    echo "</tr>";
+                                }
+                            } else {
+                                echo "<tr><td colspan='3' class='py-2 px-4 border-b text-center'>No hay datos disponibles</td></tr>";
+                            }
+                            ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Controles de paginación -->
+                <?php if ($total_paginas > 1): ?>
+                <div class="flex justify-between items-center mt-4">
+                    <button 
+                        onclick="window.location.href='?pagina=<?php echo max($pagina_actual - 1, 1); ?>'"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 <?php echo $pagina_actual <= 1 ? 'opacity-50 cursor-not-allowed' : ''; ?>"
+                        <?php echo $pagina_actual <= 1 ? 'disabled' : ''; ?>
+                    >
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                    
+                    <span class="text-sm text-gray-600">
+                        Página <?php echo $pagina_actual; ?> de <?php echo $total_paginas; ?>
+                    </span>
+                    
+                    <button 
+                        onclick="window.location.href='?pagina=<?php echo min($pagina_actual + 1, $total_paginas); ?>'"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 <?php echo $pagina_actual >= $total_paginas ? 'opacity-50 cursor-not-allowed' : ''; ?>"
+                        <?php echo $pagina_actual >= $total_paginas ? 'disabled' : ''; ?>
+                    >
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
     <script>
-        // Datos ficticios
-        const timeLabels = ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
-        const spadData = [38.2, 42.6, 45.1, 47.3, 46.8, 44.2, 41.5];
-        
-        // Gráfico principal
+        // Gráfico principal con configuración mejorada
         const ctx = document.getElementById('mainChart').getContext('2d');
         new Chart(ctx, {
             type: 'line',
@@ -164,8 +233,18 @@ $valor_clorofila_json = json_encode($valor_clorofila);
                     legend: { position: 'top' }
                 },
                 scales: {
+                    x: {
+                        ticks: {
+                            maxTicksLimit: 8, // Limita el número de etiquetas en el eje X
+                            maxRotation: 0,
+                            minRotation: 0
+                        }
+                    },
                     y: {
-                        title: { text: 'Unidades SPAD', display: true }
+                        title: { 
+                            text: 'Unidades SPAD', 
+                            display: true 
+                        }
                     }
                 }
             }
