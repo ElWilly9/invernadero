@@ -38,7 +38,7 @@ if ($con) {
         echo "El flujo de agua total recibido es: " . $flujo_acumulado;
 
         date_default_timezone_set('America/Bogota');
-        $fecha_actual = date("Y-m-d");
+        $fecha_actual = date("Y-m-d H:i:s");
         $hora_actual = date("H:i:s");
 
         $consulta = "INSERT INTO flujo_agua(litros_min, flujo_acumulado, fecha_registro, hora_registro) VALUES ('$flujo_agua', '$flujo_acumulado', '$fecha_actual', '$hora_actual')";
