@@ -13,7 +13,7 @@ if ($con) {
         echo "Humedad recibida del sensor 1 es: " . $humedad2;
 
         date_default_timezone_set('America/Bogota');
-        $fecha_actual = date("Y-m-d");
+        $fecha_actual = date("Y-m-d H:i:s");
         $hora_actual = date("H:i:s");
 
         $consulta = "INSERT INTO hum_suelo(humedad1, humedad2, fecha_registro, hora_registro) VALUES ('$humedad1', '$humedad2', '$fecha_actual', '$hora_actual')";
