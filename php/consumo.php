@@ -104,7 +104,7 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-sm text-gray-600">Consumo Acumulado</p>
-                            <p class="text-3xl font-bold text-green-600 rounded p-2" id="current-total"><?= $flujo_acumulado_actual ?> mL</p>
+                            <p class="text-3xl font-bold text-green-600 rounded p-2" id="current-total"><?= $flujo_acumulado_actual ?> L</p>
                         </div>
                         <i class="fas fa-chart-line text-4xl text-green-400"></i>
                     </div>
@@ -163,7 +163,7 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
                     tension: 0.1
                 },
                 {
-                    label: 'Flujo Acumulado (mL)',
+                    label: 'Flujo Acumulado (L)',
                     data: flujoAcumulado,
                     borderColor: '#10b981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -245,7 +245,7 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
                 const lastFlujoAcumulado = data.newFlujoAcumulado[data.newFlujoAcumulado.length - 1];
                 
                 document.getElementById('current-flow').innerText = `${lastLitrosMin.toFixed(2)} L/min`;
-                document.getElementById('current-total').innerText = `${lastFlujoAcumulado.toFixed(2)} mL`;
+                document.getElementById('current-total').innerText = `${lastFlujoAcumulado.toFixed(2)} L`;
 
                 // Mantener solo los últimos 50 puntos para mejor rendimiento
                 if (realTimeChart.data.labels.length > 50) {
