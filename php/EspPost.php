@@ -5,30 +5,6 @@ include 'conexion.php';
 if ($con) {
     echo "Conexion con base de datos exitosa! ";
 
-    /*humedad suelo*/
-    if (isset($_POST['humedad1'])) {
-        $humedad1 = $_POST['humedad1'];
-        echo "Humedad recibida del sensor 1 es: " . $humedad1;
-        $humedad2 = $_POST['humedad2'];
-        echo "Humedad recibida del sensor 1 es: " . $humedad2;
-
-        date_default_timezone_set('America/Bogota');
-        $fecha_actual = date("Y-m-d H:i:s");
-        $hora_actual = date("H:i:s");
-
-        $consulta = "INSERT INTO hum_suelo(humedad1, humedad2, fecha_registro, hora_registro) VALUES ('$humedad1', '$humedad2', '$fecha_actual', '$hora_actual')";
-
-        $resultado = mysqli_query($con, $consulta);
-
-        if ($resultado) {
-            echo " Registro en base de datos OK! ";
-        } else {
-            echo " Falla en el registro en BD: " . mysqli_error($con);
-        }
-    } else {
-        echo " No se recibió el dato de humedad del suelo. ";
-    }
-
     /*flujo de agua*/
     if (isset($_POST['flujo_agua'])) {
         $flujo_agua = $_POST['flujo_agua'];
@@ -70,11 +46,16 @@ if ($con) {
         $hum2 = $_POST['hum2'];
         echo "la humedad atmosferica es: " . $hum2;
 
+        $humedad1 = $_POST['humedad1'];
+        echo "Humedad recibida del sensor 1 es: " . $humedad1;
+        $humedad2 = $_POST['humedad2'];
+        echo "Humedad recibida del sensor 1 es: " . $humedad2;
+
         date_default_timezone_set('America/Bogota');
         $fecha_actual = date("Y-m-d H:i:s");
         $hora_actual = date("H:i:s");
 
-        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente1, temperatura_ambiente2, humedad_ambiente1, humedad_ambiente2, fecha_registro, hora_registro) VALUES ('$temp1', '$temp2', '$hum1', '$hum2', '$fecha_actual', '$hora_actual')";
+        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente1, temperatura_ambiente2, humedad_ambiente1, humedad_ambiente2, fecha_registro, hora_registro, humedad1, humedad2) VALUES ('$temp1', '$temp2', '$hum1', '$hum2', '$fecha_actual', '$hora_actual', '$humedad1', '$humedad2')";
 
         $resultado = mysqli_query($con, $consulta);
 
