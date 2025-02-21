@@ -10,7 +10,8 @@ if(!isset($_SESSION['usuario'])){
 // Consulta para obtener los últimos 50 registros con datos de consumo
 $SQL = "SELECT 
     litros_min,
-    flujo_acumulado,
+    consumo,
+    consumo_total,
     fecha_registro
 FROM flujo_agua
 ORDER BY fecha_registro DESC 
@@ -19,33 +20,40 @@ LIMIT 50";
 $consulta = mysqli_query($con, $SQL);
 
 $litros_min = [];
-$flujo_acumulado = [];
+$consumo = [];
+$consumo_total = [];
 $fechas = [];
 
 if($consulta && mysqli_num_rows($consulta) > 0){
     while ($resultado = mysqli_fetch_assoc($consulta)) {
         $litros_min[] = $resultado['litros_min'];
-        $flujo_acumulado[] = $resultado['flujo_acumulado'];
+        $consumo[] = $resultado['consumo'];
+        $consumo_total[] = $resultado['consumo_total'];
+
         $fechas[] = $resultado['fecha_registro'];
     }
     
     // Invertir para orden cronológico correcto
     $litros_min = array_reverse($litros_min);
-    $flujo_acumulado = array_reverse($flujo_acumulado);
+    $consumo = array_reverse($consumo);
+    $consumo_total = array_reverse($consumo_total);
     $fechas = array_reverse($fechas);
     
     // Valores actuales
     $litros_min_actual = end($litros_min) ?: 'N/A';
-    $flujo_acumulado_actual = end($flujo_acumulado) ?: 'N/A';
+    $consumo_actual = end($consumo) ?: 'N/A';
+    $consumo_total_actual = end($consumo_total) ?: 'N/A';
 } else {
     $litros_min_actual = 'N/A';
-    $flujo_acumulado_actual = 'N/A';
+    $consumo_actual = 'N/A';
+    $consumo_total_actual = 'N/A';
 }
 
 // Convertir a JSON para JavaScript
 $fechas_json = json_encode($fechas);
 $litros_min_json = json_encode($litros_min);
-$flujo_acumulado_json = json_encode($flujo_acumulado);
+$consumo_json = json_encode($consumo);
+$consumo_total_json = json_encode($consumo_total);
 ?>
 
 <!DOCTYPE html>
@@ -90,7 +98,7 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
     <div class="max-w-7xl mx-auto px-4 py-8">
         <div class="mb-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">Datos en Tiempo Real</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="glass-card p-6">
                     <div class="flex justify-between items-center">
                         <div>
@@ -103,10 +111,19 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
                 <div class="glass-card p-6">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-sm text-gray-600">Consumo Acumulado</p>
-                            <p class="text-3xl font-bold text-green-600 rounded p-2" id="current-total"><?= $flujo_acumulado_actual ?> L</p>
+                            <p class="text-sm text-gray-600">Consumo</p>
+                            <p class="text-3xl font-bold text-green-600 rounded p-2" id="current-total"><?= $consumo_actual ?> L</p>
                         </div>
                         <i class="fas fa-chart-line text-4xl text-green-400"></i>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-600">Consumo Acumulado</p>
+                            <p class="text-3xl font-bold text-purple-600 rounded p-2" id="current-total-acumulado"><?= $consumo_total_actual ?> L</p>
+                        </div>
+                        <i class="fas fa-faucet text-4xl text-purple-400"></i>
                     </div>
                 </div>
             </div>
@@ -145,7 +162,8 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
     // Datos precargados desde PHP
     const labels = <?= $fechas_json ?>;
     const litrosMin = <?= $litros_min_json ?>;
-    const flujoAcumulado = <?= $flujo_acumulado_json ?>;
+    const consumo = <?= $consumo_json ?>;
+    const consumoAcumulado = <?= $consumo_total_json ?>;
 
     let realTimeChart, historicalChart;
     let lastUpdate = '<?= end($fechas) ?>'; // Última fecha registrada
@@ -163,10 +181,17 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
                     tension: 0.1
                 },
                 {
-                    label: 'Flujo Acumulado (L)',
-                    data: flujoAcumulado,
+                    label: 'Consumo (L)',
+                    data: consumo,
                     borderColor: '#10b981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Consumo Acumulado (L)',
+                    data: consumoAcumulado,
+                    borderColor: '#a78bfa',
+                    backgroundColor: 'rgba(185, 16, 185, 0.1)',
                     tension: 0.1
                 }
             ]
@@ -212,7 +237,8 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
             // Actualizar datos del gráfico histórico
             historicalChart.data.labels = data.labels;
             historicalChart.data.datasets[0].data = data.litros_min;
-            historicalChart.data.datasets[1].data = data.flujo_acumulado;
+            historicalChart.data.datasets[1].data = data.consumo;
+            historicalChart.data.datasets[2].data = data.consumo_total;
             
             // Ajustar las escalas de tiempo según el rango
             const timeUnit = range === '24h' ? 'hour' : range === '7d' ? 'day' : 'week';
@@ -238,14 +264,17 @@ $flujo_acumulado_json = json_encode($flujo_acumulado);
                 // Actualiza los datos de la gráfica
                 realTimeChart.data.labels.push(...data.newDates);
                 realTimeChart.data.datasets[0].data.push(...data.newLitrosMin);
-                realTimeChart.data.datasets[1].data.push(...data.newFlujoAcumulado);
+                realTimeChart.data.datasets[1].data.push(...data.newConsumo);
+                realTimeChart.data.datasets[2].data.push(...data.newConsumoTotal);
                 
                 // Actualiza los valores actuales
                 const lastLitrosMin = data.newLitrosMin[data.newLitrosMin.length - 1];
-                const lastFlujoAcumulado = data.newFlujoAcumulado[data.newFlujoAcumulado.length - 1];
+                const lastconsumo = data.newConsumo[data.newConsumo.length - 1];
+                const lastConsumoAcumulado = data.newConsumoTotal[data.newConsumoTotal.length - 1];
                 
                 document.getElementById('current-flow').innerText = `${lastLitrosMin.toFixed(2)} L/min`;
-                document.getElementById('current-total').innerText = `${lastFlujoAcumulado.toFixed(2)} L`;
+                document.getElementById('current-total').innerText = `${lastconsumo.toFixed(2)} L`;
+                document.getElementById('current-total-acumulado').innerText = `${lastConsumoAcumulado.toFixed(2)} L`;
 
                 // Mantener solo los últimos 50 puntos para mejor rendimiento
                 if (realTimeChart.data.labels.length > 50) {

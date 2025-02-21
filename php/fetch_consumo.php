@@ -8,7 +8,8 @@ $last_update = isset($_GET['last_update']) ? $_GET['last_update'] : '';
 // Consultar nuevos registros desde la última actualización
 $SQL = "SELECT 
     litros_min,
-    flujo_acumulado,
+    consumo,
+    consumo_total,
     fecha_registro
 FROM flujo_agua
 WHERE fecha_registro > ?
@@ -23,7 +24,8 @@ $response = [
     'newData' => false,
     'newDates' => [],
     'newLitrosMin' => [],
-    'newFlujoAcumulado' => [],
+    'newConsumo' => [],
+    'newConsumoTotal' => [],
     'last_update' => $last_update
 ];
 
@@ -33,7 +35,8 @@ if($consulta && mysqli_num_rows($consulta) > 0) {
     while ($resultado = mysqli_fetch_assoc($consulta)) {
         $response['newDates'][] = $resultado['fecha_registro'];
         $response['newLitrosMin'][] = floatval($resultado['litros_min']);
-        $response['newFlujoAcumulado'][] = floatval($resultado['flujo_acumulado']);
+        $response['newConsumo'][] = floatval($resultado['consumo']);
+        $response['newConsumoTotal'][] = floatval($resultado['consumo_total']); 
         $response['last_update'] = $resultado['fecha_registro'];
     }
 }

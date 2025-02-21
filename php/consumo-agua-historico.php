@@ -26,7 +26,8 @@ switch ($range) {
 // Consulta para obtener datos históricos
 $SQL = "SELECT 
     litros_min,
-    flujo_acumulado,
+    consumo,
+    consumo_total,
     fecha_registro
 FROM flujo_agua
 WHERE fecha_registro >= {$timeLimit}
@@ -37,14 +38,16 @@ $consulta = mysqli_query($con, $SQL);
 $data = [
     'labels' => [],
     'litros_min' => [],
-    'flujo_acumulado' => []
+    'consumo' => [],
+    'consumo_total' => []
 ];
 
 if ($consulta && mysqli_num_rows($consulta) > 0) {
     while ($resultado = mysqli_fetch_assoc($consulta)) {
         $data['labels'][] = $resultado['fecha_registro'];
         $data['litros_min'][] = floatval($resultado['litros_min']);
-        $data['flujo_acumulado'][] = floatval($resultado['flujo_acumulado']);
+        $data['consumo'][] = floatval($resultado['consumo']);
+        $data['consumo_total'][] = floatval($resultado['consumo_total']);
     }
 }
 

@@ -10,14 +10,27 @@ if ($con) {
         $flujo_agua = $_POST['flujo_agua'];
         echo "El flujo de agua recibido es: " . $flujo_agua;
         
-        $flujo_acumulado = $_POST['flujo_total'];
-        echo "El flujo de agua total recibido es: " . $flujo_acumulado;
+        $consumo = $_POST['flujo_total'];
+        echo "El flujo de agua total recibido es: " . $consumo;
+
+        // Obtener el último consumo_total registrado
+        $query_ultimo_consumo = "SELECT consumo_total FROM flujo_agua ORDER BY id DESC LIMIT 1";
+        $resultado_ultimo_consumo = mysqli_query($con, $query_ultimo_consumo);
+        
+        $consumo_total = $consumo; // Valor inicial
+        
+        if ($resultado_ultimo_consumo && mysqli_num_rows($resultado_ultimo_consumo) > 0) {
+            $row = mysqli_fetch_assoc($resultado_ultimo_consumo);
+            $ultimo_consumo_total = $row['consumo_total'];
+            $consumo_total = $ultimo_consumo_total + $consumo;
+        }
 
         date_default_timezone_set('America/Bogota');
         $fecha_actual = date("Y-m-d H:i:s");
         $hora_actual = date("H:i:s");
 
-        $consulta = "INSERT INTO flujo_agua(litros_min, flujo_acumulado, fecha_registro, hora_registro) VALUES ('$flujo_agua', '$flujo_acumulado', '$fecha_actual', '$hora_actual')";
+        $consulta = "INSERT INTO flujo_agua(litros_min, consumo, consumo_total, fecha_registro) 
+                     VALUES ('$flujo_agua', '$consumo', '$consumo_total', '$fecha_actual')";
 
         $resultado = mysqli_query($con, $consulta);
 
@@ -55,7 +68,8 @@ if ($con) {
         $fecha_actual = date("Y-m-d H:i:s");
         $hora_actual = date("H:i:s");
 
-        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente1, temperatura_ambiente2, humedad_ambiente1, humedad_ambiente2, fecha_registro, hora_registro, humedad1, humedad2) VALUES ('$temp1', '$temp2', '$hum1', '$hum2', '$fecha_actual', '$hora_actual', '$humedad1', '$humedad2')";
+        $consulta = "INSERT INTO temp_hum_amb(temperatura_ambiente1, temperatura_ambiente2, humedad_ambiente1, humedad_ambiente2, fecha_registro, hora_registro, humedad1, humedad2) 
+                     VALUES ('$temp1', '$temp2', '$hum1', '$hum2', '$fecha_actual', '$hora_actual', '$humedad1', '$humedad2')";
 
         $resultado = mysqli_query($con, $consulta);
 
