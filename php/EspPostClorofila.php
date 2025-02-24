@@ -10,7 +10,7 @@ if ($con) {
         $clorofila = $_POST['clorofila'];
         echo "La clorofila registrada es: " . $clorofila;
 
-        if($clorofila <= 0){
+        if($clorofila > 0){
         date_default_timezone_set('America/Bogota');
         $fecha_actual = date("Y-m-d H:i:s");
         $hora_actual = date("H:i:s");
