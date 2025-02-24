@@ -410,8 +410,8 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
             .catch(error => console.error('Error al obtener datos:', error));
     }
 
-    // Actualiza el gráfico cada 1 segundos
-    setInterval(updateChart, 1000);
+    // Actualiza el gráfico cada 5 segundos
+    setInterval(updateChart, 5000);
 </script>
 </body>
 </html>
