@@ -146,7 +146,7 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">Nivel Actual (SPAD)</p>
-                        <p class="text-4xl font-bold text-green-800 mt-2"><?= $clorofila_actual ?></p>
+                        <p id="valorActual" class="text-4xl font-bold text-green-800 mt-2"><?= $clorofila_actual ?></p>
                     </div>
                     <i class="fas fa-seedling text-3xl text-green-600"></i>
                 </div>
@@ -156,7 +156,8 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">Estado de Salud Actual</p>
-                        <p class="text-2xl font-bold <?= $color_estado ?> mt-2"><?= $estado_salud ?></p>
+                        <p id="estadoSalud" class="text-2xl font-bold <?= $color_estado ?> mt-2"><?= $estado_salud ?></p>
+                        <i id="iconoEstado" class="fas fa-<?= $icono_estado ?> text-3xl <?= $color_icono ?>"></i>
                         <span class="text-sm text-green-600">Rango ideal: <?= $rango_min ?>-<?= $rango_max ?> SPAD</span>
                     </div>
                     <i class="fas fa-<?= $icono_estado ?> text-3xl <?= $color_icono ?>"></i>
@@ -176,7 +177,7 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
             <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
                 <h2 class="text-xl font-semibold text-green-800 mb-4">Últimas Mediciones</h2>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white">
+                    <table id="tablaMediciones" class="min-w-full bg-white">
                         <thead>
                             <tr>
                                 <th class="py-2 px-4 border-b">Fecha</th>
@@ -361,55 +362,55 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
     });
 
     function updateChart() {
-        fetch('get_data.php')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Verifica si hay nuevos datos y actualiza también las etiquetas de fecha+hora
-                if (data.fechas && data.fechas.length > 0) {
-                    // Formatear fechas cortas para el eje X
-                    const fechasFormateadas = data.fechas.map(formatearFechaCorta);
-                    
-                    myChart.data.labels = fechasFormateadas;
-                    myChart.data.datasets[0].data = data.valores;
-                    
-                    // Actualizar las líneas de referencia del rango óptimo
-                    myChart.data.datasets[1].data = Array(data.fechas.length).fill(rangoMin);
-                    myChart.data.datasets[2].data = Array(data.fechas.length).fill(rangoMax);
-                    
-                    // Necesitarás también actualizar el arreglo fechasHora
-                    if (data.fechasHora) {
-                        window.fechasHora = data.fechasHora;
-                    }
-                    
-                    // Actualizar el estado de salud si se recibe un valor actual
-                    if (data.valorActual !== undefined) {
-                        const valorActual = data.valorActual;
-                        document.getElementById('valorActual').textContent = valorActual;
-                        
-                        // Actualizar estado de salud
-                        const esOptimo = valorActual >= rangoMin && valorActual <= rangoMax;
-                        const estadoSalud = document.getElementById('estadoSalud');
-                        const iconoEstado = document.getElementById('iconoEstado');
-                        
-                        estadoSalud.textContent = esOptimo ? 'Óptimo' : 'No Óptimo';
-                        estadoSalud.className = esOptimo ? 'text-2xl font-bold text-green-800 mt-2' : 'text-2xl font-bold text-red-600 mt-2';
-                        
-                        iconoEstado.className = esOptimo ? 
-                            'fas fa-heartbeat text-3xl text-red-400' : 
-                            'fas fa-exclamation-triangle text-3xl text-yellow-500';
-                    }
-                    
-                    myChart.update();
-                }
-            })
-            .catch(error => console.error('Error al obtener datos:', error));
-    }
+    fetch('get_data.php')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Verifica si hay nuevos datos
+            if (data.fechas && data.fechas.length > 0) {
+                // Actualizar la gráfica
+                const fechasFormateadas = data.fechas.map(formatearFechaCorta);
+                myChart.data.labels = fechasFormateadas;
+                myChart.data.datasets[0].data = data.valores;
+                myChart.data.datasets[1].data = Array(data.fechas.length).fill(rangoMin);
+                myChart.data.datasets[2].data = Array(data.fechas.length).fill(rangoMax);
+                myChart.update();
 
+                // Actualizar el valor actual de clorofila
+                document.getElementById('valorActual').textContent = data.clorofila_actual;
+
+                // Actualizar el estado de salud
+                const estadoSalud = document.getElementById('estadoSalud');
+                const iconoEstado = document.getElementById('iconoEstado');
+                estadoSalud.textContent = data.estado_salud;
+                estadoSalud.className = data.estado_salud === "Óptimo" ? 
+                    'text-2xl font-bold text-green-800 mt-2' : 
+                    'text-2xl font-bold text-red-600 mt-2';
+                iconoEstado.className = data.estado_salud === "Óptimo" ? 
+                    'fas fa-heartbeat text-3xl text-red-400' : 
+                    'fas fa-exclamation-triangle text-3xl text-yellow-500';
+
+                // Actualizar la tabla
+                const tablaBody = document.querySelector('#tablaMediciones tbody');
+                tablaBody.innerHTML = ''; // Limpiar la tabla antes de agregar nuevos datos
+
+                data.datos_tabla.forEach(item => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td class="py-2 px-4 border-b">${item.fecha_registro}</td>
+                        <td class="py-2 px-4 border-b">${item.hora_registro}</td>
+                        <td class="py-2 px-4 border-b">${item.valor_clorofila1}</td>
+                    `;
+                    tablaBody.appendChild(fila);
+                });
+            }
+        })
+        .catch(error => console.error('Error al obtener datos:', error));
+}
     // Actualiza el gráfico cada 2 segundos
     setInterval(updateChart, 2000);
 </script>
