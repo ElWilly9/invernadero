@@ -19,24 +19,31 @@ LIMIT 50";
 
 $consulta = mysqli_query($con, $SQL);
 $datos = [];
+$valor_clorofila = [];
+$fechas = [];
+$fechas_hora = []; // Nuevo arreglo para fecha + hora
 
 if($consulta && mysqli_num_rows($consulta) > 0){
     while ($resultado = mysqli_fetch_assoc($consulta)) {
         // Formatear la fecha para quitar la hora
         $fecha_formateada = date('Y-m-d', strtotime($resultado['fecha_registro']));
-        $hora_formateada = date('H:i:s', strtotime($resultado['fecha_registro']));
+        $hora_formateada = date('H:i:s', strtotime($resultado['hora_registro']));
+        
         $datos[] = [
             'fecha_registro' => $fecha_formateada,
             'hora_registro' => $hora_formateada,
             'valor_clorofila1' => $resultado['valor_clorofila1']
         ];
+        
         $valor_clorofila[] = $resultado['valor_clorofila1'];
         $fechas[] = $fecha_formateada;
+        $fechas_hora[] = $fecha_formateada . ' ' . $hora_formateada; // Combinar fecha y hora
     }
     
     // Invertir para orden cronológico correcto
     $valor_clorofila = array_reverse($valor_clorofila);
     $fechas = array_reverse($fechas);
+    $fechas_hora = array_reverse($fechas_hora); // También invertir este arreglo
     
     // Valores actuales
     $clorofila_actual = end($valor_clorofila);
@@ -45,11 +52,23 @@ if($consulta && mysqli_num_rows($consulta) > 0){
     $datos = [];
     $valor_clorofila = [];
     $fechas = [];
+    $fechas_hora = [];
 }
+
+// Define el rango óptimo
+$rango_min = 35;
+$rango_max = 50;
+
+// Determina si el valor actual está en el rango óptimo
+$estado_salud = ($clorofila_actual >= $rango_min && $clorofila_actual <= $rango_max) ? "Óptimo" : "No Óptimo";
+$color_estado = ($estado_salud == "Óptimo") ? "text-green-800" : "text-red-600";
+$icono_estado = ($estado_salud == "Óptimo") ? "heartbeat" : "exclamation-triangle";
+$color_icono = ($estado_salud == "Óptimo") ? "text-red-400" : "text-yellow-500";
 
 // Convertir a JSON para JavaScript
 $fechas_json = json_encode($fechas);
 $valor_clorofila_json = json_encode($valor_clorofila);
+$fechas_hora_json = json_encode($fechas_hora); // Nuevo JSON para fecha y hora
 
 // Obtener página actual para la paginación
 $pagina_actual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
@@ -136,11 +155,11 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
             <div class="chlorophyll-card rounded-xl p-6 shadow-sm">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-600">Estado de Salud</p>
-                        <p class="text-2xl font-bold text-green-800 mt-2">Óptimo</p>
-                        <span class="text-sm text-green-600">Rango ideal: 35-50 SPAD</span>
+                        <p class="text-sm text-gray-600">Estado de Salud Actual</p>
+                        <p class="text-2xl font-bold <?= $color_estado ?> mt-2"><?= $estado_salud ?></p>
+                        <span class="text-sm text-green-600">Rango ideal: <?= $rango_min ?>-<?= $rango_max ?> SPAD</span>
                     </div>
-                    <i class="fas fa-heartbeat text-3xl text-red-400"></i>
+                    <i class="fas fa-<?= $icono_estado ?> text-3xl <?= $color_icono ?>"></i>
                 </div>
             </div>
         </div>
@@ -213,36 +232,128 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
 
     <script>
     const ctx = document.getElementById('mainChart').getContext('2d');
+    // Obtenemos las etiquetas de fecha+hora
+    const fechasHora = <?= $fechas_hora_json ?>;
+    const rangoMin = <?= $rango_min ?>;
+    const rangoMax = <?= $rango_max ?>;
+    
+    // Función para formatear fechas de manera más compacta
+    function formatearFechaCorta(fecha) {
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit'
+        });
+    }
+    
+    // Preparar datos para la gráfica
+    const fechas = <?= $fechas_json ?>;
+    const fechasFormateadas = fechas.map(formatearFechaCorta);
+    
     const myChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: <?= $fechas_json ?>,
+            labels: fechasFormateadas, // Usamos fechas formateadas cortas
             datasets: [{
                 label: 'Nivel de Clorofila (SPAD)',
                 data: <?= $valor_clorofila_json ?>,
                 borderColor: '#2e7d32',
                 backgroundColor: 'rgba(46, 125, 50, 0.1)',
                 tension: 0.4,
-                fill: true
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            },
+            // Agregamos una línea para el rango mínimo óptimo
+            {
+                label: 'Rango Mínimo Óptimo',
+                data: Array(fechas.length).fill(rangoMin),
+                borderColor: 'rgba(255, 193, 7, 0.7)',
+                borderDash: [5, 5],
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false
+            },
+            // Agregamos una línea para el rango máximo óptimo
+            {
+                label: 'Rango Máximo Óptimo',
+                data: Array(fechas.length).fill(rangoMax),
+                borderColor: 'rgba(255, 193, 7, 0.7)',
+                borderDash: [5, 5],
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false
             }]
         },
         options: {
             responsive: true,
             plugins: {
-                legend: { position: 'top' }
+                legend: { 
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        // Personalizar el título del tooltip para mostrar fecha y hora
+                        title: function(tooltipItems) {
+                            const index = tooltipItems[0].dataIndex;
+                            return fechasHora[index]; // Usar la fecha con hora
+                        },
+                        // Personalizar el valor mostrado en el tooltip
+                        label: function(context) {
+                            // Solo mostrar valor para el dataset principal
+                            if (context.datasetIndex === 0) {
+                                return 'Valor SPAD: ' + context.raw;
+                            } else if (context.datasetIndex === 1) {
+                                return 'Rango mínimo: ' + context.raw;
+                            } else if (context.datasetIndex === 2) {
+                                return 'Rango máximo: ' + context.raw;
+                            }
+                            return '';
+                        }
+                    }
+                }
             },
             scales: {
                 x: {
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
                     ticks: {
-                        maxTicksLimit: 8,
-                        maxRotation: 0,
-                        minRotation: 0
+                        maxTicksLimit: 10, // Limitar el número de etiquetas en el eje X
+                        maxRotation: 45, // Rotar las etiquetas para que ocupen menos espacio
+                        minRotation: 0,
+                        font: {
+                            size: 10 // Reducir el tamaño de la fuente
+                        }
                     }
                 },
                 y: {
                     title: { 
                         text: 'Unidades SPAD', 
                         display: true 
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    // Asegurar que el rango mínimo y máximo estén dentro del área visible
+                    min: function(context) {
+                        // Define un límite inferior que sea un poco menor que el rango mínimo o el valor mínimo
+                        const valores = <?= $valor_clorofila_json ?>;
+                        const minValor = Math.min(...valores);
+                        return Math.max(0, Math.min(minValor, rangoMin) - 5);
+                    },
+                    max: function(context) {
+                        // Define un límite superior que sea un poco mayor que el rango máximo o el valor máximo
+                        const valores = <?= $valor_clorofila_json ?>;
+                        const maxValor = Math.max(...valores);
+                        return Math.max(maxValor, rangoMax) + 5;
                     }
                 }
             }
@@ -258,10 +369,41 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
                 return response.json();
             })
             .then(data => {
-                // Verifica si hay nuevos datos
-                if (data.fechas.length > 0) {
-                    myChart.data.labels = data.fechas;
+                // Verifica si hay nuevos datos y actualiza también las etiquetas de fecha+hora
+                if (data.fechas && data.fechas.length > 0) {
+                    // Formatear fechas cortas para el eje X
+                    const fechasFormateadas = data.fechas.map(formatearFechaCorta);
+                    
+                    myChart.data.labels = fechasFormateadas;
                     myChart.data.datasets[0].data = data.valores;
+                    
+                    // Actualizar las líneas de referencia del rango óptimo
+                    myChart.data.datasets[1].data = Array(data.fechas.length).fill(rangoMin);
+                    myChart.data.datasets[2].data = Array(data.fechas.length).fill(rangoMax);
+                    
+                    // Necesitarás también actualizar el arreglo fechasHora
+                    if (data.fechasHora) {
+                        window.fechasHora = data.fechasHora;
+                    }
+                    
+                    // Actualizar el estado de salud si se recibe un valor actual
+                    if (data.valorActual !== undefined) {
+                        const valorActual = data.valorActual;
+                        document.getElementById('valorActual').textContent = valorActual;
+                        
+                        // Actualizar estado de salud
+                        const esOptimo = valorActual >= rangoMin && valorActual <= rangoMax;
+                        const estadoSalud = document.getElementById('estadoSalud');
+                        const iconoEstado = document.getElementById('iconoEstado');
+                        
+                        estadoSalud.textContent = esOptimo ? 'Óptimo' : 'No Óptimo';
+                        estadoSalud.className = esOptimo ? 'text-2xl font-bold text-green-800 mt-2' : 'text-2xl font-bold text-red-600 mt-2';
+                        
+                        iconoEstado.className = esOptimo ? 
+                            'fas fa-heartbeat text-3xl text-red-400' : 
+                            'fas fa-exclamation-triangle text-3xl text-yellow-500';
+                    }
+                    
                     myChart.update();
                 }
             })
