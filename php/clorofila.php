@@ -302,7 +302,7 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
                         // Personalizar el título del tooltip para mostrar fecha y hora
                         title: function(tooltipItems) {
                             const index = tooltipItems[0].dataIndex;
-                            return fechasHora[index]; // Usar la fecha con hora
+                            return `Fecha y Hora: ${fechasHora[index]}`; // Muestra la fecha y hora exactas
                         },
                         // Personalizar el valor mostrado en el tooltip
                         label: function(context) {
@@ -410,8 +410,8 @@ $datos_pagina = array_slice($datos, $inicio, $registros_por_pagina);
             .catch(error => console.error('Error al obtener datos:', error));
     }
 
-    // Actualiza el gráfico cada 5 segundos
-    setInterval(updateChart, 5000);
+    // Actualiza el gráfico cada 2 segundos
+    setInterval(updateChart, 2000);
 </script>
 </body>
 </html>
